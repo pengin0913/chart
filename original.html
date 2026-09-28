@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>長條圖 ⇄ 折線圖 教學動畫</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFBF7;
+    --panel:#EFF6F1;
+    --panel-border:#D3E3D9;
+    --grid-minor:#DCEAE1;
+    --grid-major:#8FAF9E;
+    --ink:#293028;
+    --ink-soft:#5B6960;
+    --navy:#1F3F6E;
+    --navy-soft:#3E5C86;
+    --vermillion:#D6552E;
+    --vermillion-soft:#E98A6C;
+    --teal:#1F7A6C;
+    --teal-soft:#5FA79A;
+    --white:#FFFFFF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(143,175,158,0.07) 27px, rgba(143,175,158,0.07) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(143,175,158,0.07) 27px, rgba(143,175,158,0.07) 28px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans TC', sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:28px 32px 14px;
+    text-align:center;
+  }
+  header h1{
+    font-family:'Klee One', 'Noto Sans TC', sans-serif;
+    font-weight:600;
+    font-size:clamp(22px,3.2vw,32px);
+    margin:0 0 6px;
+    color:var(--navy);
+    letter-spacing:0.02em;
+  }
+  header p{
+    margin:0;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  .layout{
+    display:flex;
+    gap:22px;
+    max-width:1280px;
+    margin:0 auto;
+    padding:10px 24px 40px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .panel{
+    flex:0 0 320px;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    padding:20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--grid-major) transparent;
+  }
+  .panel::-webkit-scrollbar{ width:7px; }
+  .panel::-webkit-scrollbar-thumb{ background:var(--grid-major); border-radius:4px; }
+  .panel h2{
+    font-size:14px;
+    font-weight:700;
+    margin:0 0 12px;
+    color:var(--navy);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .panel h2::before{
+    content:"";
+    width:8px;height:8px;
+    background:var(--vermillion);
+    border-radius:50%;
+    display:inline-block;
+  }
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .field input[type=text], .field input[type=number]{
+    width:100%;
+    padding:7px 9px;
+    border:1px solid var(--panel-border);
+    border-radius:7px;
+    font-family:inherit;
+    font-size:14px;
+    background:var(--white);
+    color:var(--ink);
+  }
+  .row2{display:flex; gap:10px;}
+  .row2 .field{flex:1;}
+  hr.sep{
+    border:none;
+    border-top:1px dashed var(--panel-border);
+    margin:16px 0;
+  }
+  table#dataTable{
+    width:100%;
+    border-collapse:collapse;
+    margin-bottom:10px;
+  }
+  table#dataTable th{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-align:left;
+    font-weight:600;
+    padding-bottom:4px;
+  }
+  table#dataTable td{
+    padding:3px 3px;
+  }
+  table#dataTable input{
+    width:100%;
+    padding:5px 6px;
+    border:1px solid var(--panel-border);
+    border-radius:6px;
+    font-size:13px;
+    background:var(--white);
+    color:var(--ink);
+  }
+  table#dataTable .val-col{width:70px;}
+  table#dataTable.no-series2 .val2-col{display:none;}
+  .checkbox-field{
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+  }
+  .checkbox-field label{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .checkbox-field input[type=checkbox]{
+    width:16px; height:16px;
+    accent-color: var(--teal);
+    cursor:pointer;
+  }
+  #series2NamesWrap{margin-bottom:4px;}
+  .del-btn{
+    background:none;
+    border:none;
+    color:#C0503A;
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+    padding:4px 6px;
+  }
+  .del-btn:hover{color:#8f3524;}
+  .add-row-btn{
+    width:100%;
+    padding:8px;
+    background:var(--white);
+    border:1px dashed var(--navy-soft);
+    color:var(--navy);
+    border-radius:7px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+  }
+  .add-row-btn:hover{background:#E3EDE9;}
+  .btn-group{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:16px;
+  }
+  button.action{
+    padding:11px 14px;
+    border-radius:8px;
+    border:none;
+    font-family:inherit;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, opacity .2s ease;
+  }
+  button.action:active{transform:translateY(1px);}
+  .btn-primary{
+    background:var(--vermillion);
+    color:#fff;
+    box-shadow:0 2px 0 #a5401f;
+  }
+  .btn-primary:hover{background:#c14a26;}
+  .btn-secondary{
+    background:var(--navy);
+    color:#fff;
+    box-shadow:0 2px 0 #142c4d;
+  }
+  .btn-secondary:hover{background:#1a355e;}
+  .btn-ghost{
+    background:var(--white);
+    border:1px solid var(--panel-border);
+    color:var(--ink);
+  }
+  .btn-ghost:hover{background:#f1f6f3;}
+  button.action:disabled{opacity:.5; cursor:not-allowed;}
+  .mode-indicator{
+    margin-top:14px;
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .mode-indicator span{
+    font-weight:700;
+    color:var(--navy);
+  }
+
+  .chart-toolbar{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+  }
+  button.action.small{
+    padding:7px 12px;
+    font-size:12.5px;
+  }
+  .export-fallback-link{ display:none; }
+  .export-preview-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(41,48,40,0.55);
+    z-index:999;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .export-preview-overlay.open{ display:flex; }
+  .export-preview-box{
+    background:#fff;
+    border-radius:12px;
+    max-width:min(920px, 92vw);
+    max-height:90vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  }
+  .export-preview-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--panel-border);
+    background:var(--panel);
+  }
+  .export-preview-head h3{
+    margin:0;
+    font-size:14.5px;
+    color:var(--navy);
+  }
+  .export-preview-head p{
+    margin:2px 0 0;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .export-preview-close{
+    border:none;
+    background:none;
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    color:var(--ink-soft);
+    padding:4px 8px;
+  }
+  .export-preview-close:hover{ color:var(--ink); }
+  .export-preview-body{
+    padding:16px 18px;
+    overflow:auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+  }
+  .export-preview-body img{
+    max-width:100%;
+    height:auto;
+    border:1px solid var(--panel-border);
+    border-radius:6px;
+    display:block;
+  }
+  .export-preview-download{
+    text-decoration:none;
+  }
+  .report-section{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px dashed var(--panel-border);
+  }
+  .report-section label{
+    display:block;
+    font-size:14px;
+    font-weight:700;
+    color:var(--navy);
+    margin-bottom:8px;
+  }
+  .report-section textarea{
+    width:100%;
+    resize:vertical;
+    min-height:110px;
+    padding:12px 14px;
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+    font-family:inherit;
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink);
+    background:var(--panel);
+  }
+  .report-section textarea:focus{
+    outline:none;
+    border-color:var(--teal);
+    background:#fff;
+  }
+  .report-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+  }
+  .report-footer span{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  .chart-wrap{
+    flex:1 1 560px;
+    min-width:320px;
+    background:var(--white);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    padding:16px 18px 16px;
+  }
+  .chart-title-display{
+    text-align:center;
+    font-family:'Klee One','Noto Sans TC',sans-serif;
+    font-weight:600;
+    font-size:19px;
+    color:var(--ink);
+    margin:10px 0 4px;
+  }
+  svg#chart{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+  .tick-label{
+    font-size:13px;
+    fill:var(--ink-soft);
+    font-family:'Noto Sans TC', sans-serif;
+  }
+  .axis-label{
+    font-size:14px;
+    fill:var(--ink);
+    font-weight:600;
+    font-family:'Noto Sans TC', sans-serif;
+  }
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    padding:0 24px 30px;
+  }
+
+  @media (max-width: 860px){
+    .layout{flex-direction:column;}
+    .panel{
+      flex:1 1 auto;
+      width:100%;
+      max-height:none;
+      overflow-y:visible;
+      position:static;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>長條統計圖 ⇄ 折線統計圖</h1>
+  <p>自由設定橫軸、縱軸與組距，觀察長條圖如何逐漸收攏、連成折線圖</p>
+</header>
+
+<div class="layout">
+
+  <div class="panel">
+    <h2>圖表設定</h2>
+    <div class="field">
+      <label for="chartTitle">圖表標題</label>
+      <input type="text" id="chartTitle" value="2012年某地月平均氣溫情況">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="xLabel">橫軸名稱</label>
+        <input type="text" id="xLabel" value="月">
+      </div>
+      <div class="field">
+        <label for="yLabel">縱軸名稱</label>
+        <input type="text" id="yLabel" value="°C">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="yMax">縱軸最大值</label>
+        <input type="number" id="yMax" value="35">
+      </div>
+      <div class="field">
+        <label for="yStep">組距（每格）</label>
+        <input type="number" id="yStep" value="5" min="1">
+      </div>
+    </div>
+
+    <hr class="sep">
+    <div class="checkbox-field">
+      <label><input type="checkbox" id="series2Toggle"> 加入第二組資料（畫雙折線圖）</label>
+    </div>
+    <div id="series2NamesWrap" style="display:none;">
+      <div class="row2">
+        <div class="field">
+          <label for="series1Name">數列①名稱</label>
+          <input type="text" id="series1Name" value="數列一">
+        </div>
+        <div class="field">
+          <label for="series2Name">數列②名稱</label>
+          <input type="text" id="series2Name" value="數列二">
+        </div>
+      </div>
+    </div>
+
+    <h2>資料表</h2>
+    <table id="dataTable">
+      <thead><tr><th>類別（橫軸）</th><th class="val-col">數值①</th><th class="val-col val2-col">數值②</th><th></th></tr></thead>
+      <tbody id="dataBody"></tbody>
+    </table>
+    <button class="add-row-btn" id="addRowBtn">＋ 新增一筆資料</button>
+
+    <div class="btn-group">
+      <button class="action btn-primary" id="playBtn">▶ 收合成點（長條圖→資料點）</button>
+      <button class="action btn-primary" id="playBtn2">▶ 連成折線圖（資料點→折線圖）</button>
+      <button class="action btn-secondary" id="jumpBarBtn">顯示長條圖</button>
+      <button class="action btn-secondary" id="jumpHBarBtn">顯示水平長條圖</button>
+      <button class="action btn-secondary" id="jumpLineBtn">顯示折線圖</button>
+      <button class="action btn-ghost" id="resetBtn">還原範例資料</button>
+    </div>
+    <div class="mode-indicator">目前顯示：<span id="modeLabel">長條統計圖</span></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-toolbar">
+      <button class="action btn-ghost small" id="exportBtn">⭳ 匯出圖檔（PNG，含判讀報告）</button>
+    </div>
+    <svg id="chart" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="chart-title-display" id="chartTitleDisplay"></div>
+
+    <div class="report-section">
+      <label for="reportInput">📝 統計圖判讀報告</label>
+      <textarea id="reportInput" rows="6" placeholder="請根據上方統計圖，寫下你的判讀：最高值／最低值出現在哪裡？整體呈現什麼變化趨勢？你觀察到什麼、又能推論出什麼？"></textarea>
+      <div class="report-footer">
+        <span id="reportCount">0 字</span>
+        <button class="action btn-ghost small" id="reportClearBtn">清空</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>提示：可直接修改左側資料表的類別與數值，圖表會即時更新。勾選「加入第二組資料」後，長條圖會變成兩色並排的複雜長條圖、折線圖會變成雙折線圖（皆附圖例）；「顯示水平長條圖」則是獨立的靜態顯示，同樣支援兩組資料並排比較。第一顆播放按鈕讓長條圖收合成資料點，第二顆再把資料點連成折線圖，兩者皆可再按一次復原上一步。點擊「匯出圖檔」會把目前的圖表、標題與下方判讀報告合併成一張圖片，並直接顯示在畫面上，可長按／右鍵另存，或點擊下載按鈕。</footer>
+
+<div class="export-preview-overlay" id="exportOverlay">
+  <div class="export-preview-box">
+    <div class="export-preview-head">
+      <div>
+        <h3>匯出預覽</h3>
+        <p>電腦可右鍵圖片選「另存圖片」；手機／平板可長按圖片儲存，或直接點下方下載按鈕。</p>
+      </div>
+      <button class="export-preview-close" id="exportOverlayClose" aria-label="關閉">✕</button>
+    </div>
+    <div class="export-preview-body">
+      <img id="exportPreviewImg" alt="統計圖與判讀報告匯出預覽">
+      <a class="action btn-primary export-preview-download" id="exportDownloadLink" download>⭳ 下載 PNG 圖檔</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById('chart');
+  const dataBody = document.getElementById('dataBody');
+  const chartTitleInput = document.getElementById('chartTitle');
+  const chartTitleDisplay = document.getElementById('chartTitleDisplay');
+  const xLabelInput = document.getElementById('xLabel');
+  const yLabelInput = document.getElementById('yLabel');
+  const yMaxInput = document.getElementById('yMax');
+  const yStepInput = document.getElementById('yStep');
+  const modeLabel = document.getElementById('modeLabel');
+  const playBtn = document.getElementById('playBtn');
+  const playBtn2 = document.getElementById('playBtn2');
+  const jumpBarBtn = document.getElementById('jumpBarBtn');
+  const jumpHBarBtn = document.getElementById('jumpHBarBtn');
+  const jumpLineBtn = document.getElementById('jumpLineBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const addRowBtn = document.getElementById('addRowBtn');
+  const dataTable = document.getElementById('dataTable');
+  const series2Toggle = document.getElementById('series2Toggle');
+  const series2NamesWrap = document.getElementById('series2NamesWrap');
+  const series1NameInput = document.getElementById('series1Name');
+  const series2NameInput = document.getElementById('series2Name');
+  const exportBtn = document.getElementById('exportBtn');
+  const reportInput = document.getElementById('reportInput');
+  const reportCount = document.getElementById('reportCount');
+  const reportClearBtn = document.getElementById('reportClearBtn');
+
+  const DEFAULT_DATA = [
+    ["1",5,3],["2",5,4],["3",11,9],["4",16,14],["5",21,19],["6",24,23],
+    ["7",32,29],["8",30,28],["9",26,24],["10",17,15],["11",12,10],["12",9,7]
+  ];
+
+  let mode = 'bar'; // 'bar' | 'hbar' | 'points' | 'line'
+  let animating = false;
+  let rafId = null;
+
+  const margin = {top:40, right:34, bottom:56, left:58};
+  const W = 900, H = 560;
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+
+  function series2Enabled(){ return series2Toggle.checked; }
+
+  function buildRow(label, value, value2){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="lbl-input" value="${label}"></td>
+      <td class="val-col"><input type="number" class="val-input" value="${value}"></td>
+      <td class="val-col val2-col"><input type="number" class="val2-input" value="${value2 || 0}"></td>
+      <td><button class="del-btn" title="刪除">✕</button></td>
+    `;
+    tr.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', ()=> redrawStatic());
+    });
+    tr.querySelector('.del-btn').addEventListener('click', ()=>{
+      tr.remove();
+      redrawStatic();
+    });
+    dataBody.appendChild(tr);
+  }
+
+  function loadData(arr){
+    dataBody.innerHTML = '';
+    arr.forEach(([l,v,v2])=> buildRow(l,v,v2));
+  }
+
+  function getData(){
+    const rows = [...dataBody.querySelectorAll('tr')];
+    return rows.map(r=>{
+      const l = r.querySelector('.lbl-input').value || '';
+      const v = parseFloat(r.querySelector('.val-input').value);
+      const v2 = parseFloat(r.querySelector('.val2-input').value);
+      return {label:l, value: isNaN(v)?0:v, value2: isNaN(v2)?0:v2};
+    });
+  }
+
+  function el(tag, attrs){
+    const e = document.createElementNS(NS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function yScale(v, yMax){
+    const clamped = Math.max(0, Math.min(v, yMax));
+    return margin.top + plotH - (clamped/yMax)*plotH;
+  }
+
+  // Persistent references for animation
+  let barEls = [], barEls2 = [], dotEls = [], dotEls2 = [], linePath = null, linePath2 = null, legendGroup = null, dataPoints = [];
+
+  function fullRender(){
+    dataTable.classList.toggle('no-series2', !series2Enabled());
+    series2NamesWrap.style.display = series2Enabled() ? '' : 'none';
+
+    svg.innerHTML = '';
+    chartTitleDisplay.textContent = chartTitleInput.value;
+
+    if(mode === 'hbar'){
+      renderHorizontal();
+      updateModeLabel();
+      updateButtonAvailability();
+      return;
+    }
+
+    const data = getData();
+    const yMax = Math.max(1, parseFloat(yMaxInput.value) || 35);
+    const yStep = Math.max(0.1, parseFloat(yStepInput.value) || 5);
+    const n = data.length;
+    if(n === 0) return;
+    const s2 = series2Enabled();
+
+    const baseY = margin.top + plotH;
+
+    // background
+    svg.appendChild(el('rect',{x:0,y:0,width:W,height:H,fill:'#ffffff'}));
+
+    // minor grid (subdivide each step into 5)
+    const minorStep = yStep/5;
+    for(let v=0; v<=yMax+1e-9; v+=minorStep){
+      const y = yScale(v, yMax);
+      svg.appendChild(el('line',{x1:margin.left,y1:y,x2:W-margin.right,y2:y,stroke:'var(--grid-minor)','stroke-width':1}));
+    }
+    for(let i=0;i<=n;i++){
+      const x = margin.left + (plotW/n)*i;
+      svg.appendChild(el('line',{x1:x,y1:margin.top,x2:x,y2:baseY,stroke:'var(--grid-minor)','stroke-width':1}));
+    }
+    // major grid + labels
+    for(let v=0; v<=yMax+1e-9; v+=yStep){
+      const y = yScale(v, yMax);
+      svg.appendChild(el('line',{x1:margin.left,y1:y,x2:W-margin.right,y2:y,stroke:'var(--grid-major)','stroke-width':1.2}));
+      const t = el('text',{x:margin.left-10,y:y+4,'text-anchor':'end','class':'tick-label'});
+      t.textContent = (Math.round(v*100)/100).toString();
+      svg.appendChild(t);
+    }
+
+    // axes
+    svg.appendChild(el('line',{x1:margin.left,y1:margin.top,x2:margin.left,y2:baseY,stroke:'var(--ink)','stroke-width':1.6}));
+    svg.appendChild(el('line',{x1:margin.left,y1:baseY,x2:W-margin.right,y2:baseY,stroke:'var(--ink)','stroke-width':1.6}));
+
+    // axis unit labels
+    const yLab = el('text',{x:margin.left-4,y:margin.top-16,class:'axis-label'});
+    yLab.textContent = '(' + (yLabelInput.value || '') + ')';
+    svg.appendChild(yLab);
+    const xLab = el('text',{x:W-margin.right+6,y:baseY+6,class:'axis-label'});
+    xLab.textContent = '(' + (xLabelInput.value || '') + ')';
+    svg.appendChild(xLab);
+
+    // x tick labels
+    const slot = plotW/n;
+    dataPoints = data.map((d,i)=>{
+      const cx = margin.left + slot*i + slot/2;
+      const cy = yScale(d.value, yMax);
+      const cy2 = s2 ? yScale(d.value2, yMax) : null;
+      const lbl = el('text',{x:cx,y:baseY+22,'text-anchor':'middle',class:'tick-label'});
+      lbl.textContent = d.label;
+      svg.appendChild(lbl);
+
+      let bw1, barCx1, bw2, barCx2;
+      if(s2){
+        bw1 = bw2 = slot*0.30;
+        const gapBetween = slot*0.06;
+        barCx1 = cx - (bw1+gapBetween)/2;
+        barCx2 = cx + (bw2+gapBetween)/2;
+      } else {
+        bw1 = slot*0.5;
+        barCx1 = cx;
+        bw2 = 0; barCx2 = cx;
+      }
+      return {cx, cy, cy2, value:d.value, value2:d.value2, label:d.label, bw1, barCx1, bw2, barCx2};
+    });
+
+    // group for bars (series 1, plus series 2 when enabled → grouped bar chart)
+    const barGroup = el('g',{id:'barGroup'});
+    svg.appendChild(barGroup);
+    barEls = dataPoints.map(p=>{
+      const r = el('rect',{
+        x:p.barCx1-p.bw1/2, y:p.cy, width:p.bw1, height: baseY-p.cy,
+        fill:'var(--navy)', rx:2, opacity: mode==='bar'?1:0
+      });
+      barGroup.appendChild(r);
+      return r;
+    });
+    barEls2 = s2 ? dataPoints.map(p=>{
+      const r = el('rect',{
+        x:p.barCx2-p.bw2/2, y:p.cy2, width:p.bw2, height: baseY-p.cy2,
+        fill:'var(--teal)', rx:2, opacity: mode==='bar'?1:0
+      });
+      barGroup.appendChild(r);
+      return r;
+    }) : [];
+
+    // group for line + dots (series 1)
+    const lineGroup = el('g',{id:'lineGroup'});
+    svg.appendChild(lineGroup);
+    const pathD = dataPoints.map((p,i)=> (i===0?'M':'L')+p.cx+','+p.cy).join(' ');
+    linePath = el('path',{d:pathD, fill:'none', stroke:'var(--vermillion)','stroke-width':3,
+      opacity: mode==='line'?1:0, 'stroke-linecap':'round', 'stroke-linejoin':'round'});
+    lineGroup.appendChild(linePath);
+    dotEls = dataPoints.map(p=>{
+      const c = el('circle',{cx:p.cx, cy:p.cy, r:5.5, fill:'var(--navy)', stroke:'#fff','stroke-width':1.5,
+        opacity: (mode==='points' || mode==='line') ? 1 : 0});
+      lineGroup.appendChild(c);
+      return c;
+    });
+
+    // group for line + dots (series 2, optional)
+    if(s2){
+      const pathD2 = dataPoints.map((p,i)=> (i===0?'M':'L')+p.cx+','+p.cy2).join(' ');
+      linePath2 = el('path',{d:pathD2, fill:'none', stroke:'var(--teal)','stroke-width':3,
+        opacity: mode==='line'?1:0, 'stroke-linecap':'round', 'stroke-linejoin':'round'});
+      lineGroup.appendChild(linePath2);
+      dotEls2 = dataPoints.map(p=>{
+        const c = el('circle',{cx:p.cx, cy:p.cy2, r:5.5, fill:'var(--teal)', stroke:'#fff','stroke-width':1.5,
+          opacity: (mode==='points' || mode==='line') ? 1 : 0});
+        lineGroup.appendChild(c);
+        return c;
+      });
+
+      // legend (relevant for grouped bars, points, and line — hidden only for hbar)
+      legendGroup = el('g',{id:'legendGroup', opacity: 1});
+      svg.appendChild(legendGroup);
+      const lx = margin.left + 14, ly1 = margin.top + 14, ly2 = margin.top + 34;
+      legendGroup.appendChild(el('rect',{x:lx-9,y:ly1-9,width:18,height:18,rx:3,fill:'#fff',opacity:0.85}));
+      legendGroup.appendChild(el('rect',{x:lx-9,y:ly2-9,width:18,height:18,rx:3,fill:'#fff',opacity:0.85}));
+      const swatchColor1 = 'var(--navy)';
+      legendGroup.appendChild(el('line',{x1:lx-6,y1:ly1,x2:lx+6,y2:ly1,stroke:swatchColor1,'stroke-width':3,'stroke-linecap':'round'}));
+      legendGroup.appendChild(el('line',{x1:lx-6,y1:ly2,x2:lx+6,y2:ly2,stroke:'var(--teal)','stroke-width':3,'stroke-linecap':'round'}));
+      const t1 = el('text',{x:lx+14,y:ly1+4,class:'tick-label'}); t1.textContent = series1NameInput.value || '數列一';
+      const t2 = el('text',{x:lx+14,y:ly2+4,class:'tick-label'}); t2.textContent = series2NameInput.value || '數列二';
+      legendGroup.appendChild(t1);
+      legendGroup.appendChild(t2);
+    } else {
+      linePath2 = null;
+      dotEls2 = [];
+      legendGroup = null;
+    }
+
+    updateModeLabel();
+    updateButtonAvailability();
+  }
+
+  function renderHorizontal(){
+    const data = getData();
+    const yMax = Math.max(1, parseFloat(yMaxInput.value) || 35);
+    const yStep = Math.max(0.1, parseFloat(yStepInput.value) || 5);
+    const n = data.length;
+    if(n === 0) return;
+
+    const mh = {top:30, right:44, bottom:54, left:104};
+    const pw = W - mh.left - mh.right;
+    const ph = H - mh.top - mh.bottom;
+
+    function xScaleH(v){
+      const c = Math.max(0, Math.min(v, yMax));
+      return mh.left + (c/yMax)*pw;
+    }
+
+    svg.appendChild(el('rect',{x:0,y:0,width:W,height:H,fill:'#ffffff'}));
+
+    // minor grid
+    const minorStep = yStep/5;
+    for(let v=0; v<=yMax+1e-9; v+=minorStep){
+      const x = xScaleH(v);
+      svg.appendChild(el('line',{x1:x,y1:mh.top,x2:x,y2:mh.top+ph,stroke:'var(--grid-minor)','stroke-width':1}));
+    }
+    // major grid + labels
+    for(let v=0; v<=yMax+1e-9; v+=yStep){
+      const x = xScaleH(v);
+      svg.appendChild(el('line',{x1:x,y1:mh.top,x2:x,y2:mh.top+ph,stroke:'var(--grid-major)','stroke-width':1.2}));
+      const t = el('text',{x:x,y:mh.top+ph+20,'text-anchor':'middle','class':'tick-label'});
+      t.textContent = (Math.round(v*100)/100).toString();
+      svg.appendChild(t);
+    }
+
+    // axes
+    svg.appendChild(el('line',{x1:mh.left,y1:mh.top,x2:mh.left,y2:mh.top+ph,stroke:'var(--ink)','stroke-width':1.6}));
+    svg.appendChild(el('line',{x1:mh.left,y1:mh.top+ph,x2:mh.left+pw,y2:mh.top+ph,stroke:'var(--ink)','stroke-width':1.6}));
+
+    // axis unit labels
+    const yLab = el('text',{x:mh.left+pw-6,y:mh.top+ph+40,'text-anchor':'end',class:'axis-label'});
+    yLab.textContent = '(' + (yLabelInput.value || '') + ')';
+    svg.appendChild(yLab);
+    const xLab = el('text',{x:mh.left,y:mh.top-12,class:'axis-label'});
+    xLab.textContent = '(' + (xLabelInput.value || '') + ')';
+    svg.appendChild(xLab);
+
+    // bars
+    const s2 = series2Enabled();
+    const slot = ph/n;
+    data.forEach((d,i)=>{
+      const bandY = mh.top + slot*i;
+      const catLabel = el('text',{x:mh.left-10, y:bandY+slot/2+4, 'text-anchor':'end', class:'tick-label'});
+      catLabel.textContent = d.label;
+      svg.appendChild(catLabel);
+
+      if(s2){
+        const barH = slot*0.32;
+        const gapBetween = slot*0.06;
+        const y1 = bandY + slot/2 - gapBetween/2 - barH;
+        const y2 = bandY + slot/2 + gapBetween/2;
+        const barEndX1 = xScaleH(d.value);
+        const barEndX2 = xScaleH(d.value2);
+        const w1 = Math.max(0, barEndX1 - mh.left);
+        const w2 = Math.max(0, barEndX2 - mh.left);
+        svg.appendChild(el('rect',{x:mh.left, y:y1, width:w1, height:barH, fill:'var(--navy)', rx:2}));
+        svg.appendChild(el('rect',{x:mh.left, y:y2, width:w2, height:barH, fill:'var(--teal)', rx:2}));
+
+        const valLabel1 = el('text',{x:barEndX1+6, y:y1+barH/2+4, class:'tick-label'});
+        valLabel1.textContent = (Math.round(d.value*100)/100).toString();
+        svg.appendChild(valLabel1);
+        const valLabel2 = el('text',{x:barEndX2+6, y:y2+barH/2+4, class:'tick-label'});
+        valLabel2.textContent = (Math.round(d.value2*100)/100).toString();
+        svg.appendChild(valLabel2);
+      } else {
+        const barH = slot*0.55;
+        const y = bandY + (slot-barH)/2;
+        const barEndX = xScaleH(d.value);
+        const w = Math.max(0, barEndX - mh.left);
+        svg.appendChild(el('rect',{x:mh.left, y:y, width:w, height:barH, fill:'var(--navy)', rx:2}));
+
+        const valLabel = el('text',{x:barEndX+6, y:bandY+slot/2+4, class:'tick-label'});
+        valLabel.textContent = (Math.round(d.value*100)/100).toString();
+        svg.appendChild(valLabel);
+      }
+    });
+
+    // legend for grouped horizontal bars
+    if(s2){
+      const lg = el('g',{id:'hbarLegend'});
+      svg.appendChild(lg);
+      const lx = mh.left + pw - 90, ly1 = mh.top - 14, ly2 = mh.top - 14;
+      lg.appendChild(el('rect',{x:lx-9,y:ly1-9,width:18,height:18,rx:3,fill:'var(--navy)'}));
+      const t1 = el('text',{x:lx+12,y:ly1+4,class:'tick-label'}); t1.textContent = series1NameInput.value || '數列一';
+      lg.appendChild(t1);
+      const w1len = (series1NameInput.value || '數列一').length*11 + 34;
+      lg.appendChild(el('rect',{x:lx+w1len-9,y:ly2-9,width:18,height:18,rx:3,fill:'var(--teal)'}));
+      const t2 = el('text',{x:lx+w1len+12,y:ly2+4,class:'tick-label'}); t2.textContent = series2NameInput.value || '數列二';
+      lg.appendChild(t2);
+    }
+  }
+
+  function redrawStatic(){
+    if(animating) return;
+    fullRender();
+  }
+
+  function updateModeLabel(){
+    const map = {bar:'長條統計圖', hbar:'水平長條統計圖', points:'資料點（尚未連線）', line:'折線統計圖'};
+    modeLabel.textContent = map[mode] || '';
+  }
+
+  function updateButtonAvailability(){
+    const hbarActive = (mode === 'hbar');
+    playBtn.disabled = animating || hbarActive;
+    playBtn2.disabled = animating || hbarActive;
+  }
+
+  function easeInOutCubic(t){
+    return t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+  }
+
+  function setBtnsDisabled(disabled){
+    [playBtn,playBtn2,jumpBarBtn,jumpHBarBtn,jumpLineBtn,resetBtn,addRowBtn].forEach(b=>b.disabled=disabled);
+  }
+
+  // ── 動畫一：長條圖 ⇄ 資料點（變細 → 由下往上收合 → 縮成一點）──
+  function animateBarPoints(toPoints, onDone){
+    if(animating || dataPoints.length===0) return;
+    animating = true;
+    setBtnsDisabled(true);
+    const baseY = margin.top + plotH;
+    const duration = 2400;
+    const start = performance.now();
+    const thinW = 4;
+
+    function frame(now){
+      let t = Math.min(1, (now-start)/duration);
+      const e = easeInOutCubic(t);
+      // p: 0 = 完整長條圖, 1 = 收合成點
+      const p = toPoints ? e : (1-e);
+
+      dataPoints.forEach((pt,i)=>{
+        const centerX1 = pt.barCx1 + (pt.cx - pt.barCx1)*p;
+        const fullY1 = pt.cy, fullH1 = baseY - pt.cy;
+        let w1, y1, h1, opacity1;
+
+        if(p <= 0.3){
+          // 階段一：長條由寬變細（上緣固定在數值高度，下緣仍貼著基準線）
+          const pa = p/0.3;
+          w1 = pt.bw1 + (thinW-pt.bw1)*pa;
+          y1 = fullY1; h1 = fullH1; opacity1 = 1;
+        } else if(p <= 0.8){
+          // 階段二：由下往上收合，上緣固定在數值高度，逐漸縮短
+          const pb = (p-0.3)/0.5;
+          w1 = thinW; y1 = fullY1; h1 = fullH1*(1-pb); opacity1 = 1;
+        } else {
+          // 階段三：縮成一個點，長條淡出，出現資料點
+          const pc = (p-0.8)/0.2;
+          w1 = thinW; y1 = fullY1; h1 = 0; opacity1 = 1-pc;
+        }
+        barEls[i].setAttribute('x', centerX1 - w1/2);
+        barEls[i].setAttribute('y', y1);
+        barEls[i].setAttribute('width', Math.max(0,w1));
+        barEls[i].setAttribute('height', Math.max(0,h1));
+        barEls[i].setAttribute('opacity', opacity1);
+
+        // 資料點在階段三淡入
+        const dotOpacity = p<=0.8 ? 0 : (p-0.8)/0.2;
+        dotEls[i].setAttribute('opacity', dotOpacity);
+
+        // 第二組資料的長條（若啟用）同步收合，目標同樣是各自類別中心的點
+        if(barEls2[i]){
+          const centerX2 = pt.barCx2 + (pt.cx - pt.barCx2)*p;
+          const fullY2 = pt.cy2, fullH2 = baseY - pt.cy2;
+          let w2, y2, h2, opacity2;
+          if(p <= 0.3){
+            const pa = p/0.3;
+            w2 = pt.bw2 + (thinW-pt.bw2)*pa;
+            y2 = fullY2; h2 = fullH2; opacity2 = 1;
+          } else if(p <= 0.8){
+            const pb = (p-0.3)/0.5;
+            w2 = thinW; y2 = fullY2; h2 = fullH2*(1-pb); opacity2 = 1;
+          } else {
+            const pc = (p-0.8)/0.2;
+            w2 = thinW; y2 = fullY2; h2 = 0; opacity2 = 1-pc;
+          }
+          barEls2[i].setAttribute('x', centerX2 - w2/2);
+          barEls2[i].setAttribute('y', y2);
+          barEls2[i].setAttribute('width', Math.max(0,w2));
+          barEls2[i].setAttribute('height', Math.max(0,h2));
+          barEls2[i].setAttribute('opacity', opacity2);
+        }
+        if(dotEls2[i]) dotEls2[i].setAttribute('opacity', dotOpacity);
+      });
+
+      if(t < 1){
+        rafId = requestAnimationFrame(frame);
+      } else {
+        mode = toPoints ? 'points' : 'bar';
+        animating = false;
+        setBtnsDisabled(false);
+        updateModeLabel();
+        fullRender();
+        if(onDone) onDone();
+      }
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  // ── 動畫二：資料點 ⇄ 折線圖（把所有點連成折線 / 拆回單獨的點）──
+  function animatePointsLine(toLine, onDone){
+    if(animating || dataPoints.length===0) return;
+    animating = true;
+    setBtnsDisabled(true);
+    const duration = 1100;
+    const start = performance.now();
+
+    const pathLen = linePath.getTotalLength ? linePath.getTotalLength() : 800;
+    linePath.style.strokeDasharray = pathLen;
+    let pathLen2 = 0;
+    if(linePath2){
+      pathLen2 = linePath2.getTotalLength ? linePath2.getTotalLength() : 800;
+      linePath2.style.strokeDasharray = pathLen2;
+    }
+
+    function frame(now){
+      let t = Math.min(1, (now-start)/duration);
+      const e = easeInOutCubic(t);
+      const p = toLine ? e : (1-e);
+
+      linePath.style.strokeDashoffset = pathLen*(1-p);
+      linePath.setAttribute('opacity', p>0 ? 1 : 0);
+      dotEls.forEach(d=> d.setAttribute('opacity', 1));
+
+      if(linePath2){
+        linePath2.style.strokeDashoffset = pathLen2*(1-p);
+        linePath2.setAttribute('opacity', p>0 ? 1 : 0);
+        dotEls2.forEach(d=> d.setAttribute('opacity', 1));
+      }
+
+      if(t < 1){
+        rafId = requestAnimationFrame(frame);
+      } else {
+        mode = toLine ? 'line' : 'points';
+        animating = false;
+        setBtnsDisabled(false);
+        updateModeLabel();
+        fullRender();
+        if(onDone) onDone();
+      }
+    }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  // 按鈕一：長條圖 ⇄ 資料點（若目前已是折線圖，先拆線再收合回長條圖）
+  playBtn.addEventListener('click', ()=>{
+    if(animating) return;
+    if(mode === 'bar'){
+      animateBarPoints(true);
+    } else if(mode === 'points'){
+      animateBarPoints(false);
+    } else if(mode === 'line'){
+      animatePointsLine(false, ()=> animateBarPoints(false));
+    }
+  });
+
+  // 按鈕二：資料點 ⇄ 折線圖（若目前是長條圖，先收合成點再連線）
+  playBtn2.addEventListener('click', ()=>{
+    if(animating) return;
+    if(mode === 'points'){
+      animatePointsLine(true);
+    } else if(mode === 'line'){
+      animatePointsLine(false);
+    } else if(mode === 'bar'){
+      animateBarPoints(true, ()=> animatePointsLine(true));
+    }
+  });
+
+  // ── 匯出圖檔（PNG，含標題與判讀報告）──
+  const EXPORT_COLOR_MAP = {
+    '--navy':'#1F3F6E', '--navy-soft':'#3E5C86',
+    '--vermillion':'#D6552E', '--vermillion-soft':'#E98A6C',
+    '--teal':'#1F7A6C', '--teal-soft':'#5FA79A',
+    '--ink':'#293028', '--ink-soft':'#5B6960',
+    '--grid-minor':'#DCEAE1', '--grid-major':'#8FAF9E'
+  };
+
+  function wrapCanvasText(ctx, text, maxWidth){
+    const paragraphs = text.split('\n');
+    const lines = [];
+    paragraphs.forEach(par=>{
+      if(par === ''){ lines.push(''); return; }
+      let current = '';
+      for(const ch of par){
+        const test = current + ch;
+        if(ctx.measureText(test).width > maxWidth && current.length > 0){
+          lines.push(current);
+          current = ch;
+        } else {
+          current = test;
+        }
+      }
+      if(current) lines.push(current);
+    });
+    return lines;
+  }
+
+  const exportOverlay = document.getElementById('exportOverlay');
+  const exportOverlayClose = document.getElementById('exportOverlayClose');
+  const exportPreviewImg = document.getElementById('exportPreviewImg');
+  const exportDownloadLink = document.getElementById('exportDownloadLink');
+
+  function closeExportOverlay(){
+    exportOverlay.classList.remove('open');
+  }
+  exportOverlayClose.addEventListener('click', closeExportOverlay);
+  exportOverlay.addEventListener('click', (e)=>{
+    if(e.target === exportOverlay) closeExportOverlay();
+  });
+
+  function exportChartAsPNG(){
+    try{
+      let svgString = new XMLSerializer().serializeToString(svg);
+      svgString = svgString.replace(/var\(\s*(--[a-zA-Z0-9-]+)\s*\)/g, (m, name)=> EXPORT_COLOR_MAP[name] || '#000000');
+      if(!/<svg[^>]*\swidth=/.test(svgString)){
+        svgString = svgString.replace('<svg ', `<svg width="${W}" height="${H}" `);
+      }
+
+      const scale = 2;
+      const titleText = (chartTitleInput.value || '').trim();
+      const reportText = (reportInput.value || '').trim();
+
+      const chartWpx = W*scale, chartHpx = H*scale;
+      const titleHpx = titleText ? 56*scale : 0;
+      const padPx = 26*scale;
+      const maxTextWidthPx = chartWpx - padPx*2;
+
+      // measure report text first (needs a context before final canvas size is known)
+      const measureCanvas = document.createElement('canvas');
+      const mctx = measureCanvas.getContext('2d');
+      let reportLines = [];
+      const reportFontPx = 16*scale;
+      const reportLineHeightPx = 25*scale;
+      if(reportText){
+        mctx.font = reportFontPx + 'px "Noto Sans TC", sans-serif';
+        reportLines = wrapCanvasText(mctx, reportText, maxTextWidthPx);
+      }
+      const reportHeadingPx = reportText ? 42*scale : 0;
+      const reportBodyPx = reportText ? reportLines.length*reportLineHeightPx : 0;
+      const reportAreaPx = reportText ? (24*scale + reportHeadingPx + reportBodyPx + 20*scale) : 0;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = chartWpx;
+      canvas.height = chartHpx + titleHpx + reportAreaPx;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      // 直接用 data URL 讀取 SVG（比 blob 更不受下載/預覽環境限制影響）
+      const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+      const img = new Image();
+
+      img.onload = function(){
+        try{
+          ctx.drawImage(img, 0, 0, chartWpx, chartHpx);
+
+          if(titleText){
+            ctx.fillStyle = EXPORT_COLOR_MAP['--ink'];
+            ctx.font = '600 ' + (26*scale) + 'px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(titleText, canvas.width/2, chartHpx + titleHpx/2);
+          }
+
+          if(reportText){
+            let y = chartHpx + titleHpx;
+            ctx.strokeStyle = '#D3E3D9';
+            ctx.lineWidth = 1*scale;
+            ctx.beginPath();
+            ctx.moveTo(padPx, y + 12*scale);
+            ctx.lineTo(chartWpx - padPx, y + 12*scale);
+            ctx.stroke();
+
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = EXPORT_COLOR_MAP['--navy'];
+            ctx.font = '700 ' + (18*scale) + 'px "Noto Sans TC", sans-serif';
+            ctx.fillText('統計圖判讀報告', padPx, y + 24*scale + 18*scale);
+
+            ctx.fillStyle = EXPORT_COLOR_MAP['--ink'];
+            ctx.font = reportFontPx + 'px "Noto Sans TC", sans-serif';
+            const bodyStartY = y + reportHeadingPx + 24*scale;
+            reportLines.forEach((line,i)=>{
+              ctx.fillText(line, padPx, bodyStartY + (i+1)*reportLineHeightPx - 6*scale);
+            });
+          }
+
+          const pngDataUrl = canvas.toDataURL('image/png');
+          const safeName = (titleText || '統計圖').replace(/[\\/:*?"<>|]/g,'').slice(0,40) || '統計圖';
+
+          // 直接把結果顯示在畫面上，不依賴瀏覽器是否允許自動下載
+          exportPreviewImg.src = pngDataUrl;
+          exportDownloadLink.href = pngDataUrl;
+          exportDownloadLink.download = safeName + '.png';
+          exportOverlay.classList.add('open');
+        } catch(err){
+          alert('圖檔匯出時發生錯誤：' + err.message);
+        }
+      };
+      img.onerror = function(){
+        alert('圖檔匯出失敗（SVG 轉換失敗），請重新整理頁面後再試一次。');
+      };
+      img.src = svgDataUrl;
+    } catch(err){
+      alert('圖檔匯出時發生錯誤：' + err.message);
+    }
+  }
+
+  exportBtn.addEventListener('click', exportChartAsPNG);
+
+  // ── 判讀報告輸入欄 ──
+  function updateReportCount(){
+    reportCount.textContent = (reportInput.value || '').length + ' 字';
+  }
+  reportInput.addEventListener('input', updateReportCount);
+  reportClearBtn.addEventListener('click', ()=>{
+    reportInput.value = '';
+    updateReportCount();
+    reportInput.focus();
+  });
+
+  jumpBarBtn.addEventListener('click', ()=>{
+    if(animating) return;
+    mode = 'bar';
+    fullRender();
+  });
+  jumpHBarBtn.addEventListener('click', ()=>{
+    if(animating) return;
+    mode = 'hbar';
+    fullRender();
+  });
+  jumpLineBtn.addEventListener('click', ()=>{
+    if(animating) return;
+    mode = 'line';
+    fullRender();
+  });
+  resetBtn.addEventListener('click', ()=>{
+    if(animating) return;
+    loadData(DEFAULT_DATA);
+    mode = 'bar';
+    fullRender();
+  });
+  addRowBtn.addEventListener('click', ()=>{
+    buildRow('', 0, 0);
+    redrawStatic();
+  });
+
+  [chartTitleInput,xLabelInput,yLabelInput,yMaxInput,yStepInput,series1NameInput,series2NameInput].forEach(inp=>{
+    inp.addEventListener('input', redrawStatic);
+  });
+  series2Toggle.addEventListener('change', redrawStatic);
+
+  // init
+  loadData(DEFAULT_DATA);
+  fullRender();
+  updateReportCount();
+})();
+</script>
+
+</body>
+</html>

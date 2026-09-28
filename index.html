@@ -1,0 +1,2265 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>長條圖 ⇄ 折線圖 教學動畫</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FCFBF7;
+    --panel:#EFF6F1;
+    --panel-border:#D3E3D9;
+    --grid-minor:#DCEAE1;
+    --grid-major:#8FAF9E;
+    --ink:#293028;
+    --ink-soft:#5B6960;
+    --navy:#1F3F6E;
+    --navy-soft:#3E5C86;
+    --vermillion:#D6552E;
+    --vermillion-soft:#E98A6C;
+    --teal:#1F7A6C;
+    --teal-soft:#5FA79A;
+    --white:#FFFFFF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(143,175,158,0.07) 27px, rgba(143,175,158,0.07) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(143,175,158,0.07) 27px, rgba(143,175,158,0.07) 28px),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans TC', sans-serif;
+    min-height:100vh;
+  }
+  header{
+    padding:24px 32px 10px;
+    text-align:center;
+  }
+  header h1{
+    font-family:'Klee One', 'Noto Sans TC', sans-serif;
+    font-weight:600;
+    font-size:clamp(22px,3.2vw,32px);
+    margin:0 0 6px;
+    color:var(--navy);
+    letter-spacing:0.02em;
+  }
+  header p{
+    margin:0;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  .layout{
+    display:flex;
+    gap:22px;
+    max-width:1360px;
+    margin:0 auto;
+    padding:10px 24px 40px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .panel{
+    flex:0 0 360px;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    padding:20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--grid-major) transparent;
+  }
+  .panel::-webkit-scrollbar{ width:7px; }
+  .panel::-webkit-scrollbar-thumb{ background:var(--grid-major); border-radius:4px; }
+  .panel h2{
+    font-size:14px;
+    font-weight:700;
+    margin:0 0 12px;
+    color:var(--navy);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .panel h2::before{
+    content:"";
+    width:8px;height:8px;
+    background:var(--vermillion);
+    border-radius:50%;
+    display:inline-block;
+  }
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:4px;
+  }
+  .field input[type=text], .field input[type=number], .field select{
+    width:100%;
+    padding:7px 9px;
+    border:1px solid var(--panel-border);
+    border-radius:7px;
+    font-family:inherit;
+    font-size:14px;
+    background:var(--white);
+    color:var(--ink);
+  }
+  .preset-select{
+    font-weight:600;
+    color:var(--navy);
+    background:#ffffff;
+    border:1.5px solid var(--teal-soft);
+  }
+  
+  .preset-tools{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:6px;
+    margin-top:8px;
+  }
+  .preset-btn{
+    padding:6px 8px;
+    font-size:12px;
+    border:1px solid var(--panel-border);
+    border-radius:6px;
+    background:var(--white);
+    color:var(--ink);
+    cursor:pointer;
+    font-weight:500;
+    transition:background .15s;
+  }
+  .preset-btn:hover:not(:disabled){ background:#E3EDE9; }
+  .preset-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .preset-btn.danger{ color:#C0503A; }
+  .preset-btn.danger:hover:not(:disabled){ background:#FBEBE8; }
+
+  .axis-subpanel{
+    background:#ffffff;
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:10px;
+    border-left:4px solid var(--panel-border);
+  }
+  .axis-subpanel.left-axis{ border-left-color: var(--navy); }
+  .axis-subpanel.right-axis{ border-left-color: var(--teal); }
+  .axis-subpanel-title{
+    font-size:12px;
+    font-weight:700;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .row2{display:flex; gap:10px;}
+  .row2 .field{flex:1;}
+  hr.sep{
+    border:none;
+    border-top:1px dashed var(--panel-border);
+    margin:16px 0;
+  }
+  table#dataTable{
+    width:100%;
+    border-collapse:collapse;
+    margin-bottom:10px;
+  }
+  table#dataTable th{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-align:left;
+    font-weight:600;
+    padding-bottom:4px;
+  }
+  table#dataTable td{
+    padding:3px 3px;
+  }
+  table#dataTable input{
+    width:100%;
+    padding:5px 6px;
+    border:1px solid var(--panel-border);
+    border-radius:6px;
+    font-size:13px;
+    background:var(--white);
+    color:var(--ink);
+  }
+  table#dataTable .val-col{width:72px;}
+  table#dataTable.no-series2 .val2-col{display:none;}
+  .checkbox-field{
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+  }
+  .checkbox-field label{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .checkbox-field input[type=checkbox]{
+    width:16px; height:16px;
+    accent-color: var(--teal);
+    cursor:pointer;
+  }
+  .del-btn{
+    background:none;
+    border:none;
+    color:#C0503A;
+    cursor:pointer;
+    font-size:16px;
+    line-height:1;
+    padding:4px 6px;
+  }
+  .del-btn:hover{color:#8f3524;}
+  .table-tools{
+    display:flex;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .add-row-btn, .import-btn{
+    flex:1;
+    padding:8px 6px;
+    background:var(--white);
+    border:1px dashed var(--navy-soft);
+    color:var(--navy);
+    border-radius:7px;
+    cursor:pointer;
+    font-size:12.5px;
+    font-weight:600;
+    transition:background .15s ease;
+  }
+  .add-row-btn:hover, .import-btn:hover{background:#E3EDE9;}
+  .btn-group{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:16px;
+  }
+  button.action{
+    padding:10px 14px;
+    border-radius:8px;
+    border:none;
+    font-family:inherit;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, opacity .2s ease;
+  }
+  button.action:active{transform:translateY(1px);}
+  .btn-primary{
+    background:var(--vermillion);
+    color:#fff;
+    box-shadow:0 2px 0 #a5401f;
+  }
+  .btn-primary:hover{background:#c14a26;}
+  .btn-secondary{
+    background:var(--navy);
+    color:#fff;
+    box-shadow:0 2px 0 #142c4d;
+  }
+  .btn-secondary:hover{background:#1a355e;}
+  .btn-ghost{
+    background:var(--white);
+    border:1px solid var(--panel-border);
+    color:var(--ink);
+  }
+  .btn-ghost:hover{background:#f1f6f3;}
+  button.action:disabled{opacity:.5; cursor:not-allowed;}
+  .mode-indicator{
+    margin-top:14px;
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .mode-indicator span{
+    font-weight:700;
+    color:var(--navy);
+  }
+
+  .anim-controller{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    padding:12px 16px;
+    margin-bottom:12px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .anim-ctrl-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .anim-ctrl-btns{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .anim-speed-wrap{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .anim-speed-select{
+    padding:4px 8px;
+    font-size:12.5px;
+    border-radius:6px;
+    border:1px solid var(--panel-border);
+    background:#fff;
+    color:var(--ink);
+  }
+  .timeline-wrap{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .timeline-slider{
+    flex:1;
+    -webkit-appearance:none;
+    appearance:none;
+    height:6px;
+    border-radius:3px;
+    background:var(--panel-border);
+    outline:none;
+  }
+  .timeline-slider::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--teal);
+    cursor:pointer;
+    border:2px solid #fff;
+    box-shadow:0 1px 4px rgba(0,0,0,0.25);
+  }
+  .timeline-slider::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--teal);
+    cursor:pointer;
+    border:2px solid #fff;
+    box-shadow:0 1px 4px rgba(0,0,0,0.25);
+  }
+  .timeline-labels{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:-4px;
+  }
+
+  .chart-toolbar{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+  }
+  button.action.small{
+    padding:6px 12px;
+    font-size:12px;
+  }
+  .export-preview-overlay, .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(41,48,40,0.55);
+    z-index:999;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .export-preview-overlay.open, .modal-overlay.open{ display:flex; }
+  .modal-box{
+    background:#fff;
+    border-radius:12px;
+    max-width:min(600px, 92vw);
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  }
+  .modal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--panel-border);
+    background:var(--panel);
+  }
+  .modal-head h3{
+    margin:0;
+    font-size:15px;
+    color:var(--navy);
+  }
+  .modal-close{
+    border:none;
+    background:none;
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    color:var(--ink-soft);
+    padding:4px 8px;
+  }
+  .modal-close:hover{ color:var(--ink); }
+  .modal-body{
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .modal-body textarea{
+    width:100%;
+    min-height:160px;
+    padding:10px 12px;
+    font-family:monospace;
+    font-size:13px;
+    line-height:1.5;
+    border:1px solid var(--panel-border);
+    border-radius:7px;
+    resize:vertical;
+  }
+  .modal-body textarea:focus, .modal-body input[type=text]:focus{
+    outline:none;
+    border-color:var(--teal);
+  }
+  .modal-hint{
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+  }
+  .export-preview-box{
+    background:#fff;
+    border-radius:12px;
+    max-width:min(920px, 92vw);
+    max-height:90vh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  }
+  .export-preview-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--panel-border);
+    background:var(--panel);
+  }
+  .export-preview-head h3{
+    margin:0;
+    font-size:14.5px;
+    color:var(--navy);
+  }
+  .export-preview-head p{
+    margin:2px 0 0;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .export-preview-close{
+    border:none;
+    background:none;
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    color:var(--ink-soft);
+    padding:4px 8px;
+  }
+  .export-preview-close:hover{ color:var(--ink); }
+  .export-preview-body{
+    padding:16px 18px;
+    overflow:auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+  }
+  .export-preview-body img{
+    max-width:100%;
+    height:auto;
+    border:1px solid var(--panel-border);
+    border-radius:6px;
+    display:block;
+  }
+  .export-preview-download{
+    text-decoration:none;
+  }
+  .report-section{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px dashed var(--panel-border);
+  }
+  .report-section label{
+    display:block;
+    font-size:14px;
+    font-weight:700;
+    color:var(--navy);
+    margin-bottom:8px;
+  }
+  .report-section textarea{
+    width:100%;
+    resize:vertical;
+    min-height:110px;
+    padding:12px 14px;
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+    font-family:inherit;
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink);
+    background:var(--panel);
+  }
+  .report-section textarea:focus{
+    outline:none;
+    border-color:var(--teal);
+    background:#fff;
+  }
+  .report-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+  }
+  .report-footer span{
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+
+  .chart-wrap{
+    flex:1 1 580px;
+    min-width:320px;
+    background:var(--white);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+    padding:16px 18px 16px;
+  }
+  .chart-title-display{
+    text-align:center;
+    font-family:'Klee One','Noto Sans TC',sans-serif;
+    font-weight:600;
+    font-size:19px;
+    color:var(--ink);
+    margin:10px 0 4px;
+  }
+  svg#chart{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+  .tick-label{
+    font-size:13px;
+    font-family:'Noto Sans TC', sans-serif;
+  }
+  .axis-label{
+    font-size:13.5px;
+    font-weight:700;
+    font-family:'Noto Sans TC', sans-serif;
+  }
+  .val-badge{
+    font-size:11px;
+    font-weight:700;
+    font-family:'Noto Sans TC', sans-serif;
+  }
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:var(--ink-soft);
+    padding:0 24px 30px;
+  }
+
+  @media (max-width: 860px){
+    .layout{flex-direction:column;}
+    .panel{
+      flex:1 1 auto;
+      width:100%;
+      max-height:none;
+      overflow-y:visible;
+      position:static;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>長條統計圖 ⇄ 折線統計圖</h1>
+  <p>自由設定橫軸、獨立雙縱軸與省略符號，觀察長條圖如何逐漸收攏、連成折線圖</p>
+</header>
+
+<div class="layout">
+
+  <div class="panel">
+    <h2>教學真實案例與題庫</h2>
+    <div class="field">
+      <label for="presetSelect">選擇範例 / 題庫案例</label>
+      <select id="presetSelect" class="preset-select"></select>
+    </div>
+
+    <div class="preset-tools">
+      <button class="preset-btn" id="saveNewPresetBtn">💾 另存為新案例</button>
+      <button class="preset-btn" id="updatePresetBtn" disabled>✏️ 覆蓋儲存</button>
+      <button class="preset-btn danger" id="deletePresetBtn" disabled>🗑️ 刪除案例</button>
+      <button class="preset-btn" id="exportPresetsBtn">📤 匯出題庫</button>
+      <button class="preset-btn" id="importPresetsBtn" style="grid-column: span 2;">📥 匯入題庫檔案 (.json)</button>
+      <input type="file" id="presetFileInput" accept=".json" style="display:none;">
+    </div>
+
+    <hr class="sep">
+    <h2>圖表設定</h2>
+    <div class="field">
+      <label for="chartTitle">圖表標題</label>
+      <input type="text" id="chartTitle" value="">
+    </div>
+    <div class="field">
+      <label for="xLabel">橫軸類別名稱</label>
+      <input type="text" id="xLabel" value="">
+    </div>
+
+    <!-- 左縱軸設定區塊（數列一） -->
+    <div class="axis-subpanel left-axis">
+      <div class="axis-subpanel-title" style="color:var(--navy);">
+        <span>● 左縱軸設定（數列一）</span>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="series1Name">數列①名稱</label>
+          <input type="text" id="series1Name" value="降雨量">
+        </div>
+        <div class="field">
+          <label for="yLabel">左軸單位</label>
+          <input type="text" id="yLabel" value="mm">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="yMin">起點</label>
+          <input type="number" id="yMin" value="0" step="any">
+        </div>
+        <div class="field">
+          <label for="yMax">最大值</label>
+          <input type="number" id="yMax" value="450" step="any">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="yStep">主刻度組距</label>
+        <input type="number" id="yStep" value="50" min="0.1" step="any">
+      </div>
+    </div>
+
+    <div class="checkbox-field">
+      <label><input type="checkbox" id="series2Toggle"> 加入第二組資料（雙數列）</label>
+    </div>
+
+    <!-- 右縱軸設定區塊（數列二） -->
+    <div id="series2ConfigWrap" style="display:none;">
+      <div class="checkbox-field" style="margin-top:6px; margin-bottom:8px;">
+        <label><input type="checkbox" id="dualAxisToggle" checked> <b>啟用獨立右縱軸（雙坐標軸刻度）</b></label>
+      </div>
+
+      <div class="axis-subpanel right-axis" id="rightAxisPanel">
+        <div class="axis-subpanel-title" style="color:var(--teal);">
+          <span>▲ 右縱軸設定（數列二）</span>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="series2Name">數列②名稱</label>
+            <input type="text" id="series2Name" value="月均溫">
+          </div>
+          <div class="field">
+            <label for="y2Label">右軸單位</label>
+            <input type="text" id="y2Label" value="°C">
+          </div>
+        </div>
+        <div class="row2" id="rightAxisParams">
+          <div class="field">
+            <label for="y2Min">起點 (省略記號)</label>
+            <input type="number" id="y2Min" value="15" step="any">
+          </div>
+          <div class="field">
+            <label for="y2Max">最大值</label>
+            <input type="number" id="y2Max" value="35" step="any">
+          </div>
+        </div>
+        <div class="field" id="rightAxisStepWrap" style="margin-bottom:0;">
+          <label for="y2Step">右軸主刻度組距</label>
+          <input type="number" id="y2Step" value="5" min="0.1" step="any">
+        </div>
+      </div>
+    </div>
+
+    <div class="checkbox-field">
+      <label><input type="checkbox" id="showLabelsToggle" checked> 顯示數值標籤（讀數顏色與軸線對應）</label>
+    </div>
+
+    <h2>資料表</h2>
+    <table id="dataTable">
+      <thead><tr><th>類別（橫軸）</th><th class="val-col">數值①</th><th class="val-col val2-col">數值②</th><th></th></tr></thead>
+      <tbody id="dataBody"></tbody>
+    </table>
+    
+    <div class="table-tools">
+      <button class="add-row-btn" id="addRowBtn">＋ 新增資料</button>
+      <button class="import-btn" id="openImportBtn">📋 貼上匯入數據</button>
+    </div>
+
+    <div class="btn-group">
+      <button class="action btn-primary" id="playBtn">▶ 收合成點（長條圖→資料點）</button>
+      <button class="action btn-primary" id="playBtn2">▶ 連成折線圖（資料點→折線圖）</button>
+      <button class="action btn-secondary" id="jumpBarBtn">顯示直條圖</button>
+      <button class="action btn-secondary" id="jumpHBarBtn">顯示水平長條圖</button>
+      <button class="action btn-secondary" id="jumpLineBtn">顯示折線圖</button>
+      <button class="action btn-ghost" id="resetBtn">重置目前案例資料</button>
+    </div>
+    <div class="mode-indicator">目前顯示：<span id="modeLabel">直條統計圖</span></div>
+  </div>
+
+  <div class="chart-wrap">
+    
+    <!-- 教學演示進度控制列 -->
+    <div class="anim-controller">
+      <div class="anim-ctrl-top">
+        <div class="anim-ctrl-btns">
+          <button class="action btn-primary small" id="autoPlayBtn">▶ 一鍵完整演示</button>
+          <button class="action btn-ghost small" id="pauseBtn" disabled>⏸ 暫停</button>
+        </div>
+        <div class="anim-speed-wrap">
+          <label for="speedSelect">速度：</label>
+          <select id="speedSelect" class="anim-speed-select">
+            <option value="0.5">0.5x 慢速</option>
+            <option value="1.0" selected>1.0x 正常</option>
+            <option value="1.5">1.5x 快速</option>
+          </select>
+        </div>
+      </div>
+      <div class="timeline-wrap">
+        <input type="range" id="timelineSlider" class="timeline-slider" min="0" max="1000" value="0">
+      </div>
+      <div class="timeline-labels">
+        <span>0. 直條圖</span>
+        <span>1. 收合成資料點</span>
+        <span>2. 連成折線圖</span>
+      </div>
+    </div>
+
+    <div class="chart-toolbar">
+      <button class="action btn-ghost small" id="exportBtn">⭳ 匯出圖檔（PNG，含判讀報告）</button>
+    </div>
+    <svg id="chart" viewBox="0 0 940 570" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="chart-title-display" id="chartTitleDisplay"></div>
+
+    <div class="report-section">
+      <label for="reportInput">📝 統計圖判讀報告</label>
+      <textarea id="reportInput" rows="6" placeholder="請根據上方統計圖，寫下你的判讀：兩組資料分別使用哪一邊的縱軸刻度？整體呈現什麼關係或季節趨勢？雙軸各省略了哪些區間？你觀察到什麼、又能推論出什麼？"></textarea>
+      <div class="report-footer">
+        <span id="reportCount">0 字</span>
+        <button class="action btn-ghost small" id="reportClearBtn">清空</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>提示：啟用「獨立右縱軸」時，藍色數值請對照左軸、綠色數值請對照右軸；雙軸起點皆支援獨立的波浪省略記號。拖曳演示進度條可隨時暫停解說！</footer>
+
+<!-- 另存新案例彈窗 -->
+<div class="modal-overlay" id="savePresetModal">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-head">
+      <h3>另存為題庫案例</h3>
+      <button class="modal-close" id="closeSavePresetBtn" aria-label="關閉">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="newPresetName">案例名稱（將顯示於下拉選單）</label>
+        <input type="text" id="newPresetName" placeholder="例如：氣溫與降雨量雙軸綜合圖">
+      </div>
+      <div class="modal-actions">
+        <button class="action btn-ghost small" id="cancelSavePresetBtn">取消</button>
+        <button class="action btn-primary small" id="confirmSavePresetBtn">確認儲存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 貼上匯入彈窗 -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>貼上匯入資料 (Excel / CSV)</h3>
+      <button class="modal-close" id="closeImportBtn" aria-label="關閉">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-hint">請從 Excel、Google 試算表直接反白複製儲存格並貼在下方（支援 Tab 或逗號分隔）。<br>格式範例：第一欄為類別名稱，第二欄為數值一，第三欄為數值二（若無可免）。</p>
+      <textarea id="importText" placeholder="1月&#9;15&#9;19.7&#10;2月&#9;20&#9;20.7&#10;3月&#9;35&#9;23.0"></textarea>
+      <div class="modal-actions">
+        <button class="action btn-ghost small" id="cancelImportBtn">取消</button>
+        <button class="action btn-primary small" id="confirmImportBtn">解析並匯入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 匯出預覽彈窗 -->
+<div class="export-preview-overlay" id="exportOverlay">
+  <div class="export-preview-box">
+    <div class="export-preview-head">
+      <div>
+        <h3>匯出預覽</h3>
+        <p>電腦可右鍵圖片選「另存圖片」；手機／平板可長按圖片儲存，或直接點下方下載按鈕。</p>
+      </div>
+      <button class="export-preview-close" id="exportOverlayClose" aria-label="關閉">✕</button>
+    </div>
+    <div class="export-preview-body">
+      <img id="exportPreviewImg" alt="統計圖與判讀報告匯出預覽">
+      <a class="action btn-primary export-preview-download" id="exportDownloadLink" download>⭳ 下載 PNG 圖檔</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const NS = "http://www.w3.org/2000/svg";
+  const STORAGE_KEY = "CHART_TEACHING_CUSTOM_PRESETS_V1";
+
+  const svg = document.getElementById('chart');
+  const dataBody = document.getElementById('dataBody');
+  const chartTitleInput = document.getElementById('chartTitle');
+  const chartTitleDisplay = document.getElementById('chartTitleDisplay');
+  const xLabelInput = document.getElementById('xLabel');
+  
+  // 左縱軸
+  const yLabelInput = document.getElementById('yLabel');
+  const yMinInput = document.getElementById('yMin');
+  const yMaxInput = document.getElementById('yMax');
+  const yStepInput = document.getElementById('yStep');
+  const series1NameInput = document.getElementById('series1Name');
+
+  // 右縱軸
+  const series2Toggle = document.getElementById('series2Toggle');
+  const series2ConfigWrap = document.getElementById('series2ConfigWrap');
+  const dualAxisToggle = document.getElementById('dualAxisToggle');
+  const rightAxisParams = document.getElementById('rightAxisParams');
+  const rightAxisStepWrap = document.getElementById('rightAxisStepWrap');
+  const series2NameInput = document.getElementById('series2Name');
+  const y2LabelInput = document.getElementById('y2Label');
+  const y2MinInput = document.getElementById('y2Min');
+  const y2MaxInput = document.getElementById('y2Max');
+  const y2StepInput = document.getElementById('y2Step');
+
+  const showLabelsToggle = document.getElementById('showLabelsToggle');
+  const presetSelect = document.getElementById('presetSelect');
+  const modeLabel = document.getElementById('modeLabel');
+  const playBtn = document.getElementById('playBtn');
+  const playBtn2 = document.getElementById('playBtn2');
+  const jumpBarBtn = document.getElementById('jumpBarBtn');
+  const jumpHBarBtn = document.getElementById('jumpHBarBtn');
+  const jumpLineBtn = document.getElementById('jumpLineBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const addRowBtn = document.getElementById('addRowBtn');
+  
+  const saveNewPresetBtn = document.getElementById('saveNewPresetBtn');
+  const updatePresetBtn = document.getElementById('updatePresetBtn');
+  const deletePresetBtn = document.getElementById('deletePresetBtn');
+  const exportPresetsBtn = document.getElementById('exportPresetsBtn');
+  const importPresetsBtn = document.getElementById('importPresetsBtn');
+  const presetFileInput = document.getElementById('presetFileInput');
+
+  const savePresetModal = document.getElementById('savePresetModal');
+  const closeSavePresetBtn = document.getElementById('closeSavePresetBtn');
+  const cancelSavePresetBtn = document.getElementById('cancelSavePresetBtn');
+  const confirmSavePresetBtn = document.getElementById('confirmSavePresetBtn');
+  const newPresetName = document.getElementById('newPresetName');
+
+  const openImportBtn = document.getElementById('openImportBtn');
+  const importModal = document.getElementById('importModal');
+  const closeImportBtn = document.getElementById('closeImportBtn');
+  const cancelImportBtn = document.getElementById('cancelImportBtn');
+  const confirmImportBtn = document.getElementById('confirmImportBtn');
+  const importText = document.getElementById('importText');
+
+  const dataTable = document.getElementById('dataTable');
+  const exportBtn = document.getElementById('exportBtn');
+  const reportInput = document.getElementById('reportInput');
+  const reportCount = document.getElementById('reportCount');
+  const reportClearBtn = document.getElementById('reportClearBtn');
+
+  const timelineSlider = document.getElementById('timelineSlider');
+  const autoPlayBtn = document.getElementById('autoPlayBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const speedSelect = document.getElementById('speedSelect');
+
+  // 內建官方教學案例
+  const OFFICIAL_PRESETS = {
+    climate_kaohsiung: {
+      name: "案例一：高雄市月均溫與降雨量（雙縱軸不同度量，含省略記號）",
+      title: "高雄市全年各月平均氣溫與降雨量氣候圖",
+      xLabel: "月份 (月)",
+      yLabel: "降雨量 (mm)",
+      yMin: 0,
+      yMax: 450,
+      yStep: 50,
+      hasSeries2: true,
+      isDualAxis: true,
+      series1Name: "降雨量",
+      series2Name: "月均溫",
+      y2Label: "溫度 (°C)",
+      y2Min: 15,
+      y2Max: 35,
+      y2Step: 5,
+      data: [
+        ["1月", 16, 19.7], ["2月", 20, 20.7], ["3月", 38, 23.0],
+        ["4月", 65, 26.0], ["5月", 188, 28.3], ["6月", 380, 29.4],
+        ["7月", 420, 29.6], ["8月", 440, 29.1], ["9月", 230, 28.8],
+        ["10月", 40, 27.1], ["11月", 18, 24.5], ["12月", 15, 21.1]
+      ]
+    },
+    temp_kaohsiung_taipei: {
+      name: "案例二：高雄市 vs 臺北市月均溫（共用單縱軸，雙折線）",
+      title: "高雄市與臺北市各月平均氣溫統計圖",
+      xLabel: "月份 (月)",
+      yLabel: "溫度 (°C)",
+      yMin: 10,
+      yMax: 35,
+      yStep: 5,
+      hasSeries2: true,
+      isDualAxis: false,
+      series1Name: "高雄市",
+      series2Name: "臺北市",
+      y2Label: "溫度 (°C)",
+      y2Min: 10,
+      y2Max: 35,
+      y2Step: 5,
+      data: [
+        ["1月", 19.7, 16.1], ["2月", 20.7, 16.5], ["3月", 23.0, 18.5],
+        ["4月", 26.0, 22.1], ["5月", 28.3, 25.4], ["6月", 29.4, 27.9],
+        ["7月", 29.6, 29.6], ["8月", 29.1, 29.2], ["9月", 28.8, 27.4],
+        ["10月", 27.1, 24.5], ["11月", 24.5, 21.5], ["12月", 21.1, 17.9]
+      ]
+    },
+    plant_growth: {
+      name: "案例三：綠豆苗發芽生長高度記錄（連續量，單折線）",
+      title: "綠豆發芽連續兩週生長高度記錄表",
+      xLabel: "生長日數 (天)",
+      yLabel: "株高 (公分)",
+      yMin: 0,
+      yMax: 20,
+      yStep: 2,
+      hasSeries2: false,
+      isDualAxis: false,
+      series1Name: "高度",
+      series2Name: "",
+      y2Label: "",
+      y2Min: 0,
+      y2Max: 20,
+      y2Step: 2,
+      data: [
+        ["第2天", 0.5, 0], ["第4天", 1.8, 0], ["第6天", 4.2, 0],
+        ["第8天", 8.0, 0], ["第10天", 12.5, 0], ["第12天", 16.1, 0],
+        ["第14天", 18.4, 0]
+      ]
+    },
+    school_vision: {
+      name: "案例四：國小各年級男女視力不良人數（複式長條圖）",
+      title: "新上國小各年級學生視力不良人數統計圖",
+      xLabel: "年級",
+      yLabel: "不良人數 (人)",
+      yMin: 0,
+      yMax: 120,
+      yStep: 20,
+      hasSeries2: true,
+      isDualAxis: false,
+      series1Name: "男生",
+      series2Name: "女生",
+      y2Label: "不良人數 (人)",
+      y2Min: 0,
+      y2Max: 120,
+      y2Step: 20,
+      data: [
+        ["一年級", 22, 19], ["二年級", 35, 31], ["三年級", 52, 48],
+        ["四年級", 70, 68], ["五年級", 88, 85], ["六年級", 108, 102]
+      ]
+    },
+    electricity: {
+      name: "案例五：家庭四季用電度數比較（雙折線/複式長條）",
+      title: "某家庭去年與今年各季用電度數比較圖",
+      xLabel: "季度",
+      yLabel: "用電度數 (度)",
+      yMin: 200,
+      yMax: 900,
+      yStep: 100,
+      hasSeries2: true,
+      isDualAxis: false,
+      series1Name: "去年",
+      series2Name: "今年",
+      y2Label: "用電度數 (度)",
+      y2Min: 200,
+      y2Max: 900,
+      y2Step: 100,
+      data: [
+        ["春季 (1-3月)", 380, 350],
+        ["夏季 (4-6月)", 780, 710],
+        ["秋季 (7-9月)", 820, 760],
+        ["冬季 (10-12月)", 420, 390]
+      ]
+    },
+    library_books: {
+      name: "案例六：各類圖書借閱本數（離散量，思辨是否適合折線）",
+      title: "四月份圖書館各類童書借閱數量統計",
+      xLabel: "圖書類別",
+      yLabel: "借閱冊數 (本)",
+      yMin: 0,
+      yMax: 250,
+      yStep: 50,
+      hasSeries2: false,
+      isDualAxis: false,
+      series1Name: "借閱數",
+      series2Name: "",
+      y2Label: "",
+      y2Min: 0,
+      y2Max: 250,
+      y2Step: 50,
+      data: [
+        ["童話寓言", 210, 0], ["自然科普", 165, 0], ["歷史漫畫", 185, 0],
+        ["文學故事", 120, 0], ["藝術音樂", 75, 0]
+      ]
+    }
+  };
+
+  let customPresets = {};
+
+  function loadCustomPresetsFromStorage(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      customPresets = raw ? JSON.parse(raw) : {};
+    } catch(e) {
+      customPresets = {};
+    }
+  }
+
+  function saveCustomPresetsToStorage(){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customPresets));
+    } catch(e) {
+      alert("儲存至瀏覽器本機失敗：" + e.message);
+    }
+  }
+
+  function refreshPresetSelect(selectedKey){
+    presetSelect.innerHTML = '';
+    const officialGroup = document.createElement('optgroup');
+    officialGroup.label = "📌 官方教學案例";
+    for(const k in OFFICIAL_PRESETS){
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = OFFICIAL_PRESETS[k].name;
+      officialGroup.appendChild(opt);
+    }
+    presetSelect.appendChild(officialGroup);
+
+    const customKeys = Object.keys(customPresets);
+    if(customKeys.length > 0){
+      const customGroup = document.createElement('optgroup');
+      customGroup.label = "⭐ 自訂題庫案例";
+      customKeys.forEach(k=>{
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = customPresets[k].name;
+        customGroup.appendChild(opt);
+      });
+      presetSelect.appendChild(customGroup);
+    }
+
+    if(selectedKey && (OFFICIAL_PRESETS[selectedKey] || customPresets[selectedKey])){
+      presetSelect.value = selectedKey;
+    } else {
+      presetSelect.value = 'climate_kaohsiung';
+    }
+    updatePresetToolButtons();
+  }
+
+  function updatePresetToolButtons(){
+    const curKey = presetSelect.value;
+    const isCustom = !!customPresets[curKey];
+    updatePresetBtn.disabled = !isCustom;
+    deletePresetBtn.disabled = !isCustom;
+  }
+
+  let mode = 'bar'; // 'bar' | 'hbar' | 'points' | 'line' | 'animating'
+  let animating = false;
+  let rafId = null;
+  let globalProgress = 0.0;
+
+  // 雙軸佈局邊距：左右兩側皆保留坐標軸空間
+  const margin = {top:48, right:68, bottom:56, left:68};
+  const W = 940, H = 570;
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+
+  function series2Enabled(){ return series2Toggle.checked; }
+  function isDualAxisEnabled(){ return series2Enabled() && dualAxisToggle.checked; }
+  function isLabelsVisible(){ return showLabelsToggle.checked; }
+
+  function buildRow(label, value, value2){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="lbl-input" value="${label}"></td>
+      <td class="val-col"><input type="number" step="any" class="val-input" value="${value}"></td>
+      <td class="val-col val2-col"><input type="number" step="any" class="val2-input" value="${value2 || 0}"></td>
+      <td><button class="del-btn" title="刪除">✕</button></td>
+    `;
+    tr.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', ()=> redrawStatic());
+    });
+    tr.querySelector('.del-btn').addEventListener('click', ()=>{
+      tr.remove();
+      redrawStatic();
+    });
+    dataBody.appendChild(tr);
+  }
+
+  function loadPreset(presetKey){
+    const p = OFFICIAL_PRESETS[presetKey] || customPresets[presetKey];
+    if(!p) return;
+    chartTitleInput.value = p.title || '';
+    xLabelInput.value = p.xLabel || '';
+    yLabelInput.value = p.yLabel || '';
+    yMinInput.value = p.yMin !== undefined ? p.yMin : 0;
+    yMaxInput.value = p.yMax !== undefined ? p.yMax : 100;
+    yStepInput.value = p.yStep !== undefined ? p.yStep : 10;
+    series1NameInput.value = p.series1Name || '數列一';
+
+    series2Toggle.checked = !!p.hasSeries2;
+    dualAxisToggle.checked = (p.isDualAxis !== undefined) ? p.isDualAxis : false;
+    series2NameInput.value = p.series2Name || '數列二';
+    y2LabelInput.value = p.y2Label || p.yLabel || '';
+    y2MinInput.value = p.y2Min !== undefined ? p.y2Min : 0;
+    y2MaxInput.value = p.y2Max !== undefined ? p.y2Max : 100;
+    y2StepInput.value = p.y2Step !== undefined ? p.y2Step : 10;
+
+    dataBody.innerHTML = '';
+    (p.data || []).forEach(([l,v,v2])=> buildRow(l,v,v2));
+    globalProgress = 0.0;
+    timelineSlider.value = 0;
+    updatePresetToolButtons();
+    fullRender();
+  }
+
+  function getData(){
+    const rows = [...dataBody.querySelectorAll('tr')];
+    return rows.map(r=>{
+      const l = r.querySelector('.lbl-input').value || '';
+      const v = parseFloat(r.querySelector('.val-input').value);
+      const v2 = parseFloat(r.querySelector('.val2-input').value);
+      return {label:l, value: isNaN(v)?0:v, value2: isNaN(v2)?0:v2};
+    });
+  }
+
+  function getCurrentSnapshot(caseName){
+    return {
+      name: caseName,
+      title: chartTitleInput.value,
+      xLabel: xLabelInput.value,
+      yLabel: yLabelInput.value,
+      yMin: parseFloat(yMinInput.value) || 0,
+      yMax: parseFloat(yMaxInput.value) || 10,
+      yStep: parseFloat(yStepInput.value) || 1,
+      hasSeries2: series2Toggle.checked,
+      isDualAxis: isDualAxisEnabled(),
+      series1Name: series1NameInput.value,
+      series2Name: series2NameInput.value,
+      y2Label: y2LabelInput.value,
+      y2Min: parseFloat(y2MinInput.value) || 0,
+      y2Max: parseFloat(y2MaxInput.value) || 10,
+      y2Step: parseFloat(y2StepInput.value) || 1,
+      data: getData().map(d=> [d.label, d.value, d.value2])
+    };
+  }
+
+  function el(tag, attrs){
+    const e = document.createElementNS(NS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  function yScale(v, yMin, yMax, bottomY, topY){
+    const clamped = Math.max(yMin, Math.min(v, yMax));
+    const range = (yMax - yMin) || 1;
+    return bottomY - ((clamped - yMin) / range) * (bottomY - topY);
+  }
+
+  function makeSquiggleV(cx, yStart, yEnd, amp){
+    const h = yEnd - yStart;
+    const dy = h / 4;
+    return `M ${cx} ${yStart} ` +
+           `Q ${cx - amp} ${yStart + dy*0.5} ${cx} ${yStart + dy} ` +
+           `Q ${cx + amp} ${yStart + dy*1.5} ${cx} ${yStart + dy*2} ` +
+           `Q ${cx - amp} ${yStart + dy*2.5} ${cx} ${yStart + dy*3} ` +
+           `Q ${cx + amp} ${yStart + dy*3.5} ${cx} ${yEnd}`;
+  }
+
+  function makeSquiggleH(y, xStart, xEnd, amp){
+    const w = xEnd - xStart;
+    const dx = w / 4;
+    return `M ${xStart} ${y} ` +
+           `Q ${xStart + dx*0.5} ${y - amp} ${xStart + dx} ${y} ` +
+           `Q ${xStart + dx*1.5} ${y + amp} ${xStart + dx*2} ${y} ` +
+           `Q ${xStart + dx*2.5} ${y - amp} ${xStart + dx*3} ${y} ` +
+           `Q ${xStart + dx*3.5} ${y + amp} ${xEnd} ${y}`;
+  }
+
+  function makeJaggedBarPath(x, topY, w, baseY, amp){
+    const left = x;
+    const right = x + w;
+    const mid = x + w/2;
+    return `M ${left} ${topY} ` +
+           `L ${right} ${topY} ` +
+           `L ${right} ${baseY} ` +
+           `Q ${right - w*0.25} ${baseY - amp} ${mid} ${baseY} ` +
+           `Q ${left + w*0.25} ${baseY + amp} ${left} ${baseY} Z`;
+  }
+
+  let barEls = [], barEls2 = [], dotEls = [], dotEls2 = [], linePath = null, linePath2 = null, legendGroup = null, dataPoints = [];
+  let valLabelEls = [], valLabelEls2 = [];
+  let pathLen1 = 800, pathLen2 = 800;
+
+  function fullRender(){
+    const s2 = series2Enabled();
+    const dualAxis = isDualAxisEnabled();
+    dataTable.classList.toggle('no-series2', !s2);
+    series2ConfigWrap.style.display = s2 ? '' : 'none';
+    rightAxisParams.style.display = dualAxis ? '' : 'none';
+    rightAxisStepWrap.style.display = dualAxis ? '' : 'none';
+
+    svg.innerHTML = '';
+    chartTitleDisplay.textContent = chartTitleInput.value;
+
+    if(mode === 'hbar'){
+      renderHorizontal();
+      updateModeLabel();
+      updateButtonAvailability();
+      return;
+    }
+
+    const data = getData();
+    const n = data.length;
+    if(n === 0) return;
+
+    // 左軸刻度計算 (數列一)
+    let yMin1 = parseFloat(yMinInput.value);
+    if(isNaN(yMin1)) yMin1 = 0;
+    let yMax1 = parseFloat(yMaxInput.value);
+    if(isNaN(yMax1) || yMax1 <= yMin1) yMax1 = yMin1 + 10;
+    const yStep1 = Math.max(0.001, parseFloat(yStepInput.value) || 5);
+
+    // 右軸刻度計算 (數列二)
+    let yMin2 = yMin1, yMax2 = yMax1, yStep2 = yStep1;
+    if(dualAxis){
+      yMin2 = parseFloat(y2MinInput.value);
+      if(isNaN(yMin2)) yMin2 = 0;
+      yMax2 = parseFloat(y2MaxInput.value);
+      if(isNaN(yMax2) || yMax2 <= yMin2) yMax2 = yMin2 + 10;
+      yStep2 = Math.max(0.001, parseFloat(y2StepInput.value) || 5);
+    }
+
+    const hasSq1 = (yMin1 > 0);
+    const hasSq2 = dualAxis && (yMin2 > 0);
+    const sqH1 = hasSq1 ? 26 : 0;
+    const sqH2 = hasSq2 ? 26 : 0;
+    const axisBaseY = margin.top + plotH;
+    const effBaseY1 = axisBaseY - sqH1;
+    const effBaseY2 = axisBaseY - sqH2;
+
+    svg.appendChild(el('rect',{x:0,y:0,width:W,height:H,fill:'#ffffff'}));
+
+    // 背景次網格 (依左軸基準)
+    const minorStep = yStep1 / 5;
+    for(let v = yMin1; v <= yMax1 + 1e-9; v += minorStep){
+      const y = yScale(v, yMin1, yMax1, effBaseY1, margin.top);
+      svg.appendChild(el('line',{x1:margin.left, y1:y, x2:W - margin.right, y2:y, stroke:'var(--grid-minor)', 'stroke-width':1}));
+    }
+    for(let i = 0; i <= n; i++){
+      const x = margin.left + (plotW / n) * i;
+      svg.appendChild(el('line',{x1:x, y1:margin.top, x2:x, y2:axisBaseY, stroke:'var(--grid-minor)', 'stroke-width':1}));
+    }
+
+    // 左縱軸主網格 + 刻度文字（深藍色系）
+    for(let v = yMin1; v <= yMax1 + 1e-9; v += yStep1){
+      const y = yScale(v, yMin1, yMax1, effBaseY1, margin.top);
+      svg.appendChild(el('line',{x1:margin.left, y1:y, x2:W - margin.right, y2:y, stroke:'var(--grid-major)', 'stroke-width':1.2}));
+      const t = el('text',{x:margin.left - 10, y:y + 4, 'text-anchor':'end', class:'tick-label', fill:'var(--navy)', 'font-weight':'600'});
+      t.textContent = (Math.round(v * 100) / 100).toString();
+      svg.appendChild(t);
+    }
+
+    // 左縱軸主軸線 + 省略記號
+    if(hasSq1){
+      const sqPath1 = makeSquiggleV(margin.left - 3, effBaseY1, axisBaseY, 5);
+      const sqPath2 = makeSquiggleV(margin.left + 3, effBaseY1, axisBaseY, 5);
+      svg.appendChild(el('path',{d:sqPath1, fill:'none', stroke:'var(--navy)', 'stroke-width':2, 'stroke-linecap':'round'}));
+      svg.appendChild(el('path',{d:sqPath2, fill:'none', stroke:'var(--navy)', 'stroke-width':2, 'stroke-linecap':'round'}));
+      const zeroLabel = el('text',{x:margin.left - 10, y:axisBaseY + 4, 'text-anchor':'end', class:'tick-label', fill:'var(--navy)', 'font-weight':'600'});
+      zeroLabel.textContent = "0";
+      svg.appendChild(zeroLabel);
+      svg.appendChild(el('line',{x1:margin.left, y1:margin.top, x2:margin.left, y2:effBaseY1, stroke:'var(--navy)', 'stroke-width':2}));
+    } else {
+      svg.appendChild(el('line',{x1:margin.left, y1:margin.top, x2:margin.left, y2:axisBaseY, stroke:'var(--navy)', 'stroke-width':2}));
+    }
+
+    // 右縱軸繪製（僅在雙軸啟用時，藍綠色系）
+    const rightAxisX = W - margin.right;
+    if(dualAxis){
+      for(let v = yMin2; v <= yMax2 + 1e-9; v += yStep2){
+        const y = yScale(v, yMin2, yMax2, effBaseY2, margin.top);
+        // 右側小刻度短線
+        svg.appendChild(el('line',{x1:rightAxisX, y1:y, x2:rightAxisX + 6, y2:y, stroke:'var(--teal)', 'stroke-width':1.5}));
+        const t = el('text',{x:rightAxisX + 10, y:y + 4, 'text-anchor':'start', class:'tick-label', fill:'var(--teal)', 'font-weight':'600'});
+        t.textContent = (Math.round(v * 100) / 100).toString();
+        svg.appendChild(t);
+      }
+
+      if(hasSq2){
+        const sqPath1 = makeSquiggleV(rightAxisX - 3, effBaseY2, axisBaseY, 5);
+        const sqPath2 = makeSquiggleV(rightAxisX + 3, effBaseY2, axisBaseY, 5);
+        svg.appendChild(el('path',{d:sqPath1, fill:'none', stroke:'var(--teal)', 'stroke-width':2, 'stroke-linecap':'round'}));
+        svg.appendChild(el('path',{d:sqPath2, fill:'none', stroke:'var(--teal)', 'stroke-width':2, 'stroke-linecap':'round'}));
+        const zeroLabel = el('text',{x:rightAxisX + 10, y:axisBaseY + 4, 'text-anchor':'start', class:'tick-label', fill:'var(--teal)', 'font-weight':'600'});
+        zeroLabel.textContent = "0";
+        svg.appendChild(zeroLabel);
+        svg.appendChild(el('line',{x1:rightAxisX, y1:margin.top, x2:rightAxisX, y2:effBaseY2, stroke:'var(--teal)', 'stroke-width':2}));
+      } else {
+        svg.appendChild(el('line',{x1:rightAxisX, y1:margin.top, x2:rightAxisX, y2:axisBaseY, stroke:'var(--teal)', 'stroke-width':2}));
+      }
+
+      // 右軸頂部說明標籤 (箭頭引導)
+      const y2Name = (series2NameInput.value || '數列二') + (y2LabelInput.value ? ` (${y2LabelInput.value})` : '');
+      const y2Lab = el('text',{x:rightAxisX, y:margin.top - 16, 'text-anchor':'start', class:'axis-label', fill:'var(--teal)'});
+      y2Lab.textContent = y2Name + ' →';
+      svg.appendChild(y2Lab);
+    } else {
+      // 若無雙軸，右邊僅為框線
+      svg.appendChild(el('line',{x1:rightAxisX, y1:margin.top, x2:rightAxisX, y2:axisBaseY, stroke:'var(--grid-minor)', 'stroke-width':1.2}));
+    }
+
+    // 橫軸底線
+    svg.appendChild(el('line',{x1:margin.left, y1:axisBaseY, x2:rightAxisX, y2:axisBaseY, stroke:'var(--ink)', 'stroke-width':1.8}));
+
+    // 左軸頂部說明標籤 (箭頭引導)
+    const y1Name = (series1NameInput.value || '數列一') + (yLabelInput.value ? ` (${yLabelInput.value})` : '');
+    const yLab = el('text',{x:margin.left, y:margin.top - 16, 'text-anchor':'end', class:'axis-label', fill:'var(--navy)'});
+    yLab.textContent = '← ' + y1Name;
+    svg.appendChild(yLab);
+
+    // 橫軸名稱
+    const xLab = el('text',{x:W/2, y:axisBaseY + 42, 'text-anchor':'middle', class:'axis-label', fill:'var(--ink)'});
+    xLab.textContent = xLabelInput.value || '類別';
+    svg.appendChild(xLab);
+
+    // 映射所有數據點到坐標
+    const slot = plotW / n;
+    dataPoints = data.map((d, i)=>{
+      const cx = margin.left + slot * i + slot / 2;
+      const cy = yScale(d.value, yMin1, yMax1, effBaseY1, margin.top);
+      const cy2 = s2 ? yScale(d.value2, yMin2, yMax2, effBaseY2, margin.top) : null;
+      const lbl = el('text',{x:cx, y:axisBaseY + 22, 'text-anchor':'middle', class:'tick-label', fill:'var(--ink)'});
+      lbl.textContent = d.label;
+      svg.appendChild(lbl);
+
+      let bw1, barCx1, bw2, barCx2;
+      if(s2){
+        bw1 = bw2 = slot * 0.30;
+        const gapBetween = slot * 0.06;
+        barCx1 = cx - (bw1 + gapBetween) / 2;
+        barCx2 = cx + (bw2 + gapBetween) / 2;
+      } else {
+        bw1 = slot * 0.5;
+        barCx1 = cx;
+        bw2 = 0; barCx2 = cx;
+      }
+      return {cx, cy, cy2, value:d.value, value2:d.value2, label:d.label, bw1, barCx1, bw2, barCx2, effBaseY1, effBaseY2, hasSq1, hasSq2};
+    });
+
+    // 直條圖群組 (數列一用左軸、數列二用右軸)
+    const barGroup = el('g',{id:'barGroup'});
+    svg.appendChild(barGroup);
+    barEls = dataPoints.map(p=>{
+      let r;
+      if(p.hasSq1){
+        r = el('path',{
+          d: makeJaggedBarPath(p.barCx1 - p.bw1/2, p.cy, p.bw1, p.effBaseY1, 3),
+          fill:'var(--navy)'
+        });
+      } else {
+        r = el('rect',{
+          x: p.barCx1 - p.bw1/2, y: p.cy, width: p.bw1, height: p.effBaseY1 - p.cy,
+          fill:'var(--navy)', rx:2
+        });
+      }
+      barGroup.appendChild(r);
+      return r;
+    });
+
+    barEls2 = s2 ? dataPoints.map(p=>{
+      let r;
+      if(p.hasSq2){
+        r = el('path',{
+          d: makeJaggedBarPath(p.barCx2 - p.bw2/2, p.cy2, p.bw2, p.effBaseY2, 3),
+          fill:'var(--teal)'
+        });
+      } else {
+        r = el('rect',{
+          x: p.barCx2 - p.bw2/2, y: p.cy2, width: p.bw2, height: p.effBaseY2 - p.cy2,
+          fill:'var(--teal)', rx:2
+        });
+      }
+      barGroup.appendChild(r);
+      return r;
+    }) : [];
+
+    // 折線圖路徑群組
+    const lineGroup = el('g',{id:'lineGroup'});
+    svg.appendChild(lineGroup);
+    const pathD = dataPoints.map((p,i)=> (i===0?'M':'L') + p.cx + ',' + p.cy).join(' ');
+    linePath = el('path',{
+      d:pathD, fill:'none', stroke:'var(--navy)', 'stroke-width':3.2,
+      'stroke-linecap':'round', 'stroke-linejoin':'round'
+    });
+    lineGroup.appendChild(linePath);
+    pathLen1 = linePath.getTotalLength ? linePath.getTotalLength() : 800;
+    linePath.style.strokeDasharray = pathLen1;
+
+    dotEls = dataPoints.map(p=>{
+      const c = el('circle',{
+        cx:p.cx, cy:p.cy, r:5.5, fill:'var(--navy)', stroke:'#fff', 'stroke-width':1.8
+      });
+      lineGroup.appendChild(c);
+      return c;
+    });
+
+    if(s2){
+      const pathD2 = dataPoints.map((p,i)=> (i===0?'M':'L') + p.cx + ',' + p.cy2).join(' ');
+      linePath2 = el('path',{
+        d:pathD2, fill:'none', stroke:'var(--teal)', 'stroke-width':3.2,
+        'stroke-linecap':'round', 'stroke-linejoin':'round'
+      });
+      lineGroup.appendChild(linePath2);
+      pathLen2 = linePath2.getTotalLength ? linePath2.getTotalLength() : 800;
+      linePath2.style.strokeDasharray = pathLen2;
+
+      dotEls2 = dataPoints.map(p=>{
+        const c = el('circle',{
+          cx:p.cx, cy:p.cy2, r:5.5, fill:'var(--teal)', stroke:'#fff', 'stroke-width':1.8
+        });
+        lineGroup.appendChild(c);
+        return c;
+      });
+    } else {
+      linePath2 = null;
+      dotEls2 = [];
+      pathLen2 = 0;
+    }
+
+    // 數值文字標籤（顏色精準綁定）
+    const labelGroup = el('g',{id:'labelGroup'});
+    svg.appendChild(labelGroup);
+    valLabelEls = dataPoints.map(p=>{
+      const t = el('text',{
+        x: p.barCx1, y: p.cy - 7, 'text-anchor':'middle', class:'val-badge',
+        fill: 'var(--navy)'
+      });
+      t.textContent = (Math.round(p.value * 100) / 100).toString();
+      labelGroup.appendChild(t);
+      return t;
+    });
+
+    valLabelEls2 = s2 ? dataPoints.map(p=>{
+      const t = el('text',{
+        x: p.barCx2, y: p.cy2 - 7, 'text-anchor':'middle', class:'val-badge',
+        fill: 'var(--teal)'
+      });
+      t.textContent = (Math.round(p.value2 * 100) / 100).toString();
+      labelGroup.appendChild(t);
+      return t;
+    }) : [];
+
+    // 圖例（清楚標明看左軸 / 看右軸）
+    if(s2){
+      legendGroup = el('g',{id:'legendGroup', opacity: 1});
+      svg.appendChild(legendGroup);
+      const lx = margin.left + 16, ly1 = margin.top + 14, ly2 = margin.top + 34;
+      legendGroup.appendChild(el('rect',{x:lx-9, y:ly1-9, width:18, height:18, rx:3, fill:'#fff', opacity:0.88}));
+      legendGroup.appendChild(el('rect',{x:lx-9, y:ly2-9, width:18, height:18, rx:3, fill:'#fff', opacity:0.88}));
+      legendGroup.appendChild(el('line',{x1:lx-6, y1:ly1, x2:lx+6, y2:ly1, stroke:'var(--navy)', 'stroke-width':3.2, 'stroke-linecap':'round'}));
+      legendGroup.appendChild(el('line',{x1:lx-6, y1:ly2, x2:lx+6, y2:ly2, stroke:'var(--teal)', 'stroke-width':3.2, 'stroke-linecap':'round'}));
+      
+      const s1Txt = (series1NameInput.value || '數列一') + (dualAxis ? ' (← 看左軸)' : '');
+      const s2Txt = (series2NameInput.value || '數列二') + (dualAxis ? ' (看右軸 →)' : '');
+
+      const t1 = el('text',{x:lx+14, y:ly1+4, class:'tick-label', fill:'var(--navy)', 'font-weight':'700'}); t1.textContent = s1Txt;
+      const t2 = el('text',{x:lx+14, y:ly2+4, class:'tick-label', fill:'var(--teal)', 'font-weight':'700'}); t2.textContent = s2Txt;
+      legendGroup.appendChild(t1);
+      legendGroup.appendChild(t2);
+    } else {
+      legendGroup = null;
+    }
+
+    renderTimelineFrame(globalProgress);
+    updateModeLabel();
+    updateButtonAvailability();
+  }
+
+  function renderTimelineFrame(prog){
+    globalProgress = Math.max(0, Math.min(1, prog));
+    const showLabels = isLabelsVisible();
+    const thinW = 3.5;
+
+    if(globalProgress <= 0.5){
+      const p = globalProgress / 0.5;
+
+      dataPoints.forEach((pt, i)=>{
+        const baseY1 = pt.effBaseY1;
+        const curCenterX1 = pt.barCx1 + (pt.cx - pt.barCx1) * p;
+        const fullY1 = pt.cy, fullH1 = Math.max(0, baseY1 - pt.cy);
+        let w1, y1, h1, opacity1;
+
+        if(p <= 0.3){
+          const pa = p / 0.3;
+          w1 = pt.bw1 + (thinW - pt.bw1) * pa;
+          y1 = fullY1; h1 = fullH1; opacity1 = 1;
+        } else if(p <= 0.8){
+          const pb = (p - 0.3) / 0.5;
+          w1 = thinW; y1 = fullY1; h1 = fullH1 * (1 - pb); opacity1 = 1;
+        } else {
+          const pc = (p - 0.8) / 0.2;
+          w1 = thinW; y1 = fullY1; h1 = 0; opacity1 = 1 - pc;
+        }
+
+        if(pt.hasSq1){
+          barEls[i].setAttribute('d', makeJaggedBarPath(curCenterX1 - w1/2, y1, w1, y1 + h1, 3 * (w1/pt.bw1)));
+        } else {
+          barEls[i].setAttribute('x', curCenterX1 - w1/2);
+          barEls[i].setAttribute('y', y1);
+          barEls[i].setAttribute('width', Math.max(0, w1));
+          barEls[i].setAttribute('height', Math.max(0, h1));
+        }
+        barEls[i].setAttribute('opacity', opacity1);
+
+        const dotOpacity = p <= 0.8 ? 0 : (p - 0.8) / 0.2;
+        dotEls[i].setAttribute('opacity', dotOpacity);
+
+        if(valLabelEls[i]){
+          valLabelEls[i].setAttribute('x', curCenterX1);
+          valLabelEls[i].setAttribute('opacity', showLabels ? 1 : 0);
+        }
+
+        if(barEls2[i]){
+          const baseY2 = pt.effBaseY2;
+          const curCenterX2 = pt.barCx2 + (pt.cx - pt.barCx2) * p;
+          const fullY2 = pt.cy2, fullH2 = Math.max(0, baseY2 - pt.cy2);
+          let w2, y2, h2, opacity2;
+          if(p <= 0.3){
+            const pa = p / 0.3;
+            w2 = pt.bw2 + (thinW - pt.bw2) * pa;
+            y2 = fullY2; h2 = fullH2; opacity2 = 1;
+          } else if(p <= 0.8){
+            const pb = (p - 0.3) / 0.5;
+            w2 = thinW; y2 = fullY2; h2 = fullH2 * (1 - pb); opacity2 = 1;
+          } else {
+            const pc = (p - 0.8) / 0.2;
+            w2 = thinW; y2 = fullY2; h2 = 0; opacity2 = 1 - pc;
+          }
+
+          if(pt.hasSq2){
+            barEls2[i].setAttribute('d', makeJaggedBarPath(curCenterX2 - w2/2, y2, w2, y2 + h2, 3 * (w2/pt.bw2)));
+          } else {
+            barEls2[i].setAttribute('x', curCenterX2 - w2/2);
+            barEls2[i].setAttribute('y', y2);
+            barEls2[i].setAttribute('width', Math.max(0, w2));
+            barEls2[i].setAttribute('height', Math.max(0, h2));
+          }
+          barEls2[i].setAttribute('opacity', opacity2);
+
+          if(valLabelEls2[i]){
+            valLabelEls2[i].setAttribute('x', curCenterX2);
+            valLabelEls2[i].setAttribute('opacity', showLabels ? 1 : 0);
+          }
+        }
+        if(dotEls2[i]) dotEls2[i].setAttribute('opacity', dotOpacity);
+      });
+
+      linePath.setAttribute('opacity', 0);
+      linePath.style.strokeDashoffset = pathLen1;
+      if(linePath2){
+        linePath2.setAttribute('opacity', 0);
+        linePath2.style.strokeDashoffset = pathLen2;
+      }
+
+    } else {
+      const p = (globalProgress - 0.5) / 0.5;
+
+      dataPoints.forEach((pt, i)=>{
+        barEls[i].setAttribute('opacity', 0);
+        dotEls[i].setAttribute('opacity', 1);
+        if(valLabelEls[i]){
+          valLabelEls[i].setAttribute('x', pt.cx);
+          valLabelEls[i].setAttribute('opacity', showLabels ? 1 : 0);
+        }
+
+        if(barEls2[i]) barEls2[i].setAttribute('opacity', 0);
+        if(dotEls2[i]) dotEls2[i].setAttribute('opacity', 1);
+        if(valLabelEls2[i]){
+          valLabelEls2[i].setAttribute('x', pt.cx);
+          valLabelEls2[i].setAttribute('opacity', showLabels ? 1 : 0);
+        }
+      });
+
+      linePath.setAttribute('opacity', p > 0 ? 1 : 0);
+      linePath.style.strokeDashoffset = pathLen1 * (1 - p);
+
+      if(linePath2){
+        linePath2.setAttribute('opacity', p > 0 ? 1 : 0);
+        linePath2.style.strokeDashoffset = pathLen2 * (1 - p);
+      }
+    }
+
+    if(globalProgress <= 0.05) mode = 'bar';
+    else if(globalProgress >= 0.95) mode = 'line';
+    else if(Math.abs(globalProgress - 0.5) <= 0.05) mode = 'points';
+    else mode = 'animating';
+
+    updateModeLabel();
+  }
+
+  function renderHorizontal(){
+    const data = getData();
+    let yMin = parseFloat(yMinInput.value) || 0;
+    let yMax = parseFloat(yMaxInput.value) || 100;
+    if(yMax <= yMin) yMax = yMin + 10;
+    const yStep = Math.max(0.001, parseFloat(yStepInput.value) || 10);
+    const n = data.length;
+    if(n === 0) return;
+    const showLabels = isLabelsVisible();
+
+    const mh = {top:34, right:46, bottom:56, left:112};
+    const pw = W - mh.left - mh.right;
+    const ph = H - mh.top - mh.bottom;
+
+    const hasSquiggle = (yMin > 0);
+    const squiggleWidth = hasSquiggle ? 26 : 0;
+    const axisBaseX = mh.left;
+    const effectiveBaseX = axisBaseX + squiggleWidth;
+
+    function xScaleH(v){
+      const clamped = Math.max(yMin, Math.min(v, yMax));
+      const range = (yMax - yMin) || 1;
+      return effectiveBaseX + ((clamped - yMin) / range) * (W - mh.right - effectiveBaseX);
+    }
+
+    svg.appendChild(el('rect',{x:0, y:0, width:W, height:H, fill:'#ffffff'}));
+
+    const minorStep = yStep / 5;
+    for(let v = yMin; v <= yMax + 1e-9; v += minorStep){
+      const x = xScaleH(v);
+      svg.appendChild(el('line',{x1:x, y1:mh.top, x2:x, y2:mh.top + ph, stroke:'var(--grid-minor)', 'stroke-width':1}));
+    }
+
+    for(let v = yMin; v <= yMax + 1e-9; v += yStep){
+      const x = xScaleH(v);
+      svg.appendChild(el('line',{x1:x, y1:mh.top, x2:x, y2:mh.top + ph, stroke:'var(--grid-major)', 'stroke-width':1.2}));
+      const t = el('text',{x:x, y:mh.top + ph + 20, 'text-anchor':'middle', class:'tick-label', fill:'var(--ink)'});
+      t.textContent = (Math.round(v * 100) / 100).toString();
+      svg.appendChild(t);
+    }
+
+    if(hasSquiggle){
+      const sqPath1 = makeSquiggleH(mh.top + ph - 3, axisBaseX, effectiveBaseX, 5);
+      const sqPath2 = makeSquiggleH(mh.top + ph + 3, axisBaseX, effectiveBaseX, 5);
+      svg.appendChild(el('path',{d:sqPath1, fill:'none', stroke:'var(--ink)', 'stroke-width':1.8, 'stroke-linecap':'round'}));
+      svg.appendChild(el('path',{d:sqPath2, fill:'none', stroke:'var(--ink)', 'stroke-width':1.8, 'stroke-linecap':'round'}));
+
+      const zeroLabel = el('text',{x:axisBaseX, y:mh.top + ph + 20, 'text-anchor':'middle', class:'tick-label', fill:'var(--ink)'});
+      zeroLabel.textContent = "0";
+      svg.appendChild(zeroLabel);
+
+      svg.appendChild(el('line',{x1:effectiveBaseX, y1:mh.top + ph, x2:W - mh.right, y2:mh.top + ph, stroke:'var(--ink)', 'stroke-width':1.8}));
+    } else {
+      svg.appendChild(el('line',{x1:axisBaseX, y1:mh.top + ph, x2:W - mh.right, y2:mh.top + ph, stroke:'var(--ink)', 'stroke-width':1.8}));
+    }
+
+    svg.appendChild(el('line',{x1:axisBaseX, y1:mh.top, x2:axisBaseX, y2:mh.top + ph, stroke:'var(--ink)', 'stroke-width':1.8}));
+
+    const yLab = el('text',{x:mh.left + pw - 6, y:mh.top + ph + 42, 'text-anchor':'end', class:'axis-label', fill:'var(--navy)'});
+    yLab.textContent = '(' + (yLabelInput.value || '') + ')';
+    svg.appendChild(yLab);
+    const xLab = el('text',{x:mh.left, y:mh.top - 12, class:'axis-label', fill:'var(--ink)'});
+    xLab.textContent = '(' + (xLabelInput.value || '') + ')';
+    svg.appendChild(xLab);
+
+    const s2 = series2Enabled();
+    const slot = ph / n;
+    data.forEach((d, i)=>{
+      const bandY = mh.top + slot * i;
+      const catLabel = el('text',{x:axisBaseX - 12, y:bandY + slot/2 + 5, 'text-anchor':'end', class:'tick-label', fill:'var(--ink)'});
+      catLabel.textContent = d.label;
+      svg.appendChild(catLabel);
+
+      if(s2){
+        const barH = slot * 0.32;
+        const gapBetween = slot * 0.06;
+        const y1 = bandY + slot/2 - gapBetween/2 - barH;
+        const y2 = bandY + slot/2 + gapBetween/2;
+        const barEndX1 = xScaleH(d.value);
+        const barEndX2 = xScaleH(d.value2);
+        const w1 = Math.max(0, barEndX1 - effectiveBaseX);
+        const w2 = Math.max(0, barEndX2 - effectiveBaseX);
+
+        svg.appendChild(el('rect',{x:effectiveBaseX, y:y1, width:w1, height:barH, fill:'var(--navy)', rx:2}));
+        svg.appendChild(el('rect',{x:effectiveBaseX, y:y2, width:w2, height:barH, fill:'var(--teal)', rx:2}));
+
+        if(showLabels){
+          const valLabel1 = el('text',{x:barEndX1 + 6, y:y1 + barH/2 + 4, class:'val-badge', fill:'var(--navy)'});
+          valLabel1.textContent = (Math.round(d.value * 100) / 100).toString();
+          svg.appendChild(valLabel1);
+          const valLabel2 = el('text',{x:barEndX2 + 6, y:y2 + barH/2 + 4, class:'val-badge', fill:'var(--teal)'});
+          valLabel2.textContent = (Math.round(d.value2 * 100) / 100).toString();
+          svg.appendChild(valLabel2);
+        }
+      } else {
+        const barH = slot * 0.55;
+        const y = bandY + (slot - barH) / 2;
+        const barEndX = xScaleH(d.value);
+        const w = Math.max(0, barEndX - effectiveBaseX);
+        svg.appendChild(el('rect',{x:effectiveBaseX, y:y, width:w, height:barH, fill:'var(--navy)', rx:2}));
+
+        if(showLabels){
+          const valLabel = el('text',{x:barEndX + 6, y:bandY + slot/2 + 5, class:'val-badge', fill:'var(--navy)'});
+          valLabel.textContent = (Math.round(d.value * 100) / 100).toString();
+          svg.appendChild(valLabel);
+        }
+      }
+    });
+
+    if(s2){
+      const lg = el('g',{id:'hbarLegend'});
+      svg.appendChild(lg);
+      const lx = mh.left + pw - 120, ly1 = mh.top - 14, ly2 = mh.top - 14;
+      lg.appendChild(el('rect',{x:lx-9, y:ly1-9, width:18, height:18, rx:3, fill:'var(--navy)'}));
+      const t1 = el('text',{x:lx+12, y:ly1+4, class:'tick-label', fill:'var(--navy)'}); t1.textContent = series1NameInput.value || '數列一';
+      lg.appendChild(t1);
+      const w1len = (series1NameInput.value || '數列一').length * 12 + 34;
+      lg.appendChild(el('rect',{x:lx + w1len - 9, y:ly2 - 9, width:18, height:18, rx:3, fill:'var(--teal)'}));
+      const t2 = el('text',{x:lx + w1len + 12, y:ly2 + 4, class:'tick-label', fill:'var(--teal)'}); t2.textContent = series2NameInput.value || '數列二';
+      lg.appendChild(t2);
+    }
+  }
+
+  function redrawStatic(){
+    if(animating) return;
+    fullRender();
+  }
+
+  function updateModeLabel(){
+    const map = {bar:'直條統計圖', hbar:'水平長條統計圖', points:'資料點（尚未連線）', line:'折線統計圖', animating:'動畫漸變中'};
+    modeLabel.textContent = map[mode] || '';
+  }
+
+  function updateButtonAvailability(){
+    const hbarActive = (mode === 'hbar');
+    playBtn.disabled = animating || hbarActive;
+    playBtn2.disabled = animating || hbarActive;
+    autoPlayBtn.disabled = animating || hbarActive;
+    timelineSlider.disabled = hbarActive;
+  }
+
+  function easeInOutCubic(t){
+    return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+  }
+
+  function animateToProgress(targetProg, durationMs, onDone){
+    if(animating) cancelAnimationFrame(rafId);
+    animating = true;
+    pauseBtn.disabled = false;
+    autoPlayBtn.disabled = true;
+
+    const startProg = globalProgress;
+    const diff = targetProg - startProg;
+    const speed = parseFloat(speedSelect.value) || 1.0;
+    const effectiveDuration = Math.max(200, (durationMs / speed) * Math.abs(diff));
+    const startTime = performance.now();
+
+    function step(now){
+      if(!animating) return;
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / effectiveDuration);
+      const e = easeInOutCubic(t);
+      const curProg = startProg + diff * e;
+
+      renderTimelineFrame(curProg);
+      timelineSlider.value = Math.round(curProg * 1000);
+
+      if(t < 1){
+        rafId = requestAnimationFrame(step);
+      } else {
+        animating = false;
+        pauseBtn.disabled = true;
+        autoPlayBtn.disabled = false;
+        updateButtonAvailability();
+        if(onDone) onDone();
+      }
+    }
+    rafId = requestAnimationFrame(step);
+  }
+
+  timelineSlider.addEventListener('input', (e)=>{
+    if(animating){
+      cancelAnimationFrame(rafId);
+      animating = false;
+      pauseBtn.disabled = true;
+      autoPlayBtn.disabled = false;
+    }
+    if(mode === 'hbar'){
+      mode = 'bar';
+      fullRender();
+    }
+    const val = parseFloat(e.target.value) / 1000;
+    renderTimelineFrame(val);
+  });
+
+  autoPlayBtn.addEventListener('click', ()=>{
+    if(mode === 'hbar'){ mode = 'bar'; fullRender(); }
+    if(globalProgress >= 0.98){
+      renderTimelineFrame(0);
+      timelineSlider.value = 0;
+    }
+    animateToProgress(1.0, 3600);
+  });
+
+  pauseBtn.addEventListener('click', ()=>{
+    if(animating){
+      cancelAnimationFrame(rafId);
+      animating = false;
+      pauseBtn.disabled = true;
+      autoPlayBtn.disabled = false;
+      updateButtonAvailability();
+    }
+  });
+
+  playBtn.addEventListener('click', ()=>{
+    if(mode === 'hbar'){ mode = 'bar'; fullRender(); }
+    if(globalProgress < 0.45){
+      animateToProgress(0.5, 2200);
+    } else {
+      animateToProgress(0.0, 2200);
+    }
+  });
+
+  playBtn2.addEventListener('click', ()=>{
+    if(mode === 'hbar'){ mode = 'bar'; fullRender(); }
+    if(globalProgress < 0.95){
+      animateToProgress(1.0, 1600);
+    } else {
+      animateToProgress(0.5, 1600);
+    }
+  });
+
+  jumpBarBtn.addEventListener('click', ()=>{
+    if(animating) cancelAnimationFrame(rafId);
+    animating = false;
+    pauseBtn.disabled = true;
+    autoPlayBtn.disabled = false;
+    mode = 'bar';
+    timelineSlider.value = 0;
+    fullRender();
+    renderTimelineFrame(0);
+  });
+
+  jumpHBarBtn.addEventListener('click', ()=>{
+    if(animating) cancelAnimationFrame(rafId);
+    animating = false;
+    pauseBtn.disabled = true;
+    autoPlayBtn.disabled = false;
+    mode = 'hbar';
+    fullRender();
+  });
+
+  jumpLineBtn.addEventListener('click', ()=>{
+    if(animating) cancelAnimationFrame(rafId);
+    animating = false;
+    pauseBtn.disabled = true;
+    autoPlayBtn.disabled = false;
+    mode = 'line';
+    timelineSlider.value = 1000;
+    fullRender();
+    renderTimelineFrame(1);
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    if(animating) cancelAnimationFrame(rafId);
+    animating = false;
+    pauseBtn.disabled = true;
+    autoPlayBtn.disabled = false;
+    loadPreset(presetSelect.value);
+    mode = 'bar';
+  });
+
+  saveNewPresetBtn.addEventListener('click', ()=>{
+    newPresetName.value = chartTitleInput.value ? (chartTitleInput.value + "（自訂）") : "我的教學案例";
+    savePresetModal.classList.add('open');
+    newPresetName.focus();
+  });
+  function closeSaveModal(){ savePresetModal.classList.remove('open'); }
+  closeSavePresetBtn.addEventListener('click', closeSaveModal);
+  cancelSavePresetBtn.addEventListener('click', closeSaveModal);
+  savePresetModal.addEventListener('click', (e)=>{ if(e.target === savePresetModal) closeSaveModal(); });
+
+  confirmSavePresetBtn.addEventListener('click', ()=>{
+    const name = newPresetName.value.trim();
+    if(!name){ alert("請輸入案例名稱！"); return; }
+    const newId = "custom_" + Date.now();
+    customPresets[newId] = getCurrentSnapshot(name);
+    saveCustomPresetsToStorage();
+    refreshPresetSelect(newId);
+    closeSaveModal();
+    alert(`成功儲存案例「${name}」至題庫！`);
+  });
+
+  updatePresetBtn.addEventListener('click', ()=>{
+    const curKey = presetSelect.value;
+    if(!customPresets[curKey]) return;
+    if(!confirm(`確定要將目前的資料覆蓋更新至「${customPresets[curKey].name}」嗎？`)) return;
+    customPresets[curKey] = getCurrentSnapshot(customPresets[curKey].name);
+    saveCustomPresetsToStorage();
+    alert("案例資料已成功更新！");
+  });
+
+  deletePresetBtn.addEventListener('click', ()=>{
+    const curKey = presetSelect.value;
+    if(!customPresets[curKey]) return;
+    if(!confirm(`確定要刪除自訂題庫案例「${customPresets[curKey].name}」嗎？刪除後無法復原。`)) return;
+    delete customPresets[curKey];
+    saveCustomPresetsToStorage();
+    refreshPresetSelect('climate_kaohsiung');
+    loadPreset('climate_kaohsiung');
+  });
+
+  exportPresetsBtn.addEventListener('click', ()=>{
+    const keys = Object.keys(customPresets);
+    if(keys.length === 0){
+      alert("目前尚無自訂題庫案例可供匯出，請先點擊「另存為新案例」。");
+      return;
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(customPresets, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `統計圖自訂題庫_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+  });
+
+  importPresetsBtn.addEventListener('click', ()=> presetFileInput.click());
+  presetFileInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt)=>{
+      try{
+        const imported = JSON.parse(evt.target.result);
+        if(typeof imported !== 'object' || Array.isArray(imported)){
+          throw new Error("格式錯誤：題庫檔需為合法 JSON 物件。");
+        }
+        let count = 0;
+        for(const k in imported){
+          if(imported[k] && imported[k].title && Array.isArray(imported[k].data)){
+            const safeKey = "custom_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+            customPresets[safeKey] = imported[k];
+            count++;
+          }
+        }
+        if(count > 0){
+          saveCustomPresetsToStorage();
+          refreshPresetSelect();
+          alert(`成功匯入 ${count} 筆題庫案例！`);
+        } else {
+          alert("匯入失敗：未在檔案中找到相容的案例資料結構。");
+        }
+      } catch(err){
+        alert("無法讀取此題庫檔案：" + err.message);
+      }
+      presetFileInput.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  openImportBtn.addEventListener('click', ()=>{
+    importText.value = '';
+    importModal.classList.add('open');
+    importText.focus();
+  });
+  function closeImport(){ importModal.classList.remove('open'); }
+  closeImportBtn.addEventListener('click', closeImport);
+  cancelImportBtn.addEventListener('click', closeImport);
+  importModal.addEventListener('click', (e)=>{ if(e.target === importModal) closeImport(); });
+
+  confirmImportBtn.addEventListener('click', ()=>{
+    const raw = importText.value.trim();
+    if(!raw){ alert('請先貼上資料內容！'); return; }
+    const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length > 0);
+    if(lines.length === 0) return;
+
+    let sep = '\t';
+    if(!lines[0].includes('\t') && lines[0].includes(',')) sep = ',';
+
+    const parsedRows = lines.map(line=> line.split(sep).map(c=> c.trim().replace(/^["']|["']$/g, '')));
+    
+    let firstRow = parsedRows[0];
+    let startIdx = 0;
+    let s2Found = false;
+    if(isNaN(parseFloat(firstRow[1])) && firstRow[1] !== undefined){
+      startIdx = 1;
+      if(firstRow[1]) series1NameInput.value = firstRow[1];
+      if(firstRow[2]){
+        series2NameInput.value = firstRow[2];
+        s2Found = true;
+      }
+    }
+
+    const newArr = [];
+    for(let i = startIdx; i < parsedRows.length; i++){
+      const row = parsedRows[i];
+      const lbl = row[0] || ('項目' + (i - startIdx + 1));
+      const v1 = parseFloat(row[1]);
+      const v2 = parseFloat(row[2]);
+      if(!isNaN(v2)) s2Found = true;
+      newArr.push([lbl, isNaN(v1) ? 0 : v1, isNaN(v2) ? 0 : v2]);
+    }
+
+    if(newArr.length === 0){ alert('無法解析有效數據，請確認格式。'); return; }
+
+    series2Toggle.checked = s2Found;
+    dataBody.innerHTML = '';
+    newArr.forEach(([l,v,v2])=> buildRow(l,v,v2));
+
+    const s1Vals = newArr.map(r => r[1]);
+    const maxVal1 = Math.max(...s1Vals);
+    const minVal1 = Math.min(...s1Vals);
+    const step1 = Math.ceil(maxVal1 / 6) || 10;
+    yMinInput.value = 0;
+    yMaxInput.value = Math.ceil(maxVal1 / step1) * step1;
+    yStepInput.value = step1;
+
+    if(s2Found){
+      const s2Vals = newArr.map(r => r[2]);
+      const maxVal2 = Math.max(...s2Vals);
+      const minVal2 = Math.min(...s2Vals);
+      // 若兩組數值量級差異超過2倍，自動啟用獨立雙軸
+      if(maxVal1 > maxVal2 * 2.5 || maxVal2 > maxVal1 * 2.5){
+        dualAxisToggle.checked = true;
+        const step2 = Math.ceil(maxVal2 / 6) || 5;
+        y2MinInput.value = 0;
+        y2MaxInput.value = Math.ceil(maxVal2 / step2) * step2;
+        y2StepInput.value = step2;
+      } else {
+        dualAxisToggle.checked = false;
+      }
+    }
+
+    closeImport();
+    globalProgress = 0;
+    timelineSlider.value = 0;
+    mode = 'bar';
+    fullRender();
+  });
+
+  const EXPORT_COLOR_MAP = {
+    '--navy':'#1F3F6E', '--navy-soft':'#3E5C86',
+    '--vermillion':'#D6552E', '--vermillion-soft':'#E98A6C',
+    '--teal':'#1F7A6C', '--teal-soft':'#5FA79A',
+    '--ink':'#293028', '--ink-soft':'#5B6960',
+    '--grid-minor':'#DCEAE1', '--grid-major':'#8FAF9E'
+  };
+
+  function wrapCanvasText(ctx, text, maxWidth){
+    const paragraphs = text.split('\n');
+    const lines = [];
+    paragraphs.forEach(par=>{
+      if(par === ''){ lines.push(''); return; }
+      let current = '';
+      for(const ch of par){
+        const test = current + ch;
+        if(ctx.measureText(test).width > maxWidth && current.length > 0){
+          lines.push(current);
+          current = ch;
+        } else {
+          current = test;
+        }
+      }
+      if(current) lines.push(current);
+    });
+    return lines;
+  }
+
+  const exportOverlay = document.getElementById('exportOverlay');
+  const exportOverlayClose = document.getElementById('exportOverlayClose');
+  const exportPreviewImg = document.getElementById('exportPreviewImg');
+  const exportDownloadLink = document.getElementById('exportDownloadLink');
+
+  function closeExportOverlay(){ exportOverlay.classList.remove('open'); }
+  exportOverlayClose.addEventListener('click', closeExportOverlay);
+  exportOverlay.addEventListener('click', (e)=>{ if(e.target === exportOverlay) closeExportOverlay(); });
+
+  function exportChartAsPNG(){
+    try{
+      let svgString = new XMLSerializer().serializeToString(svg);
+      svgString = svgString.replace(/var\(\s*(--[a-zA-Z0-9-]+)\s*\)/g, (m, name)=> EXPORT_COLOR_MAP[name] || '#000000');
+      if(!/<svg[^>]*\swidth=/.test(svgString)){
+        svgString = svgString.replace('<svg ', `<svg width="${W}" height="${H}" `);
+      }
+
+      const scale = 2;
+      const titleText = (chartTitleInput.value || '').trim();
+      const reportText = (reportInput.value || '').trim();
+
+      const chartWpx = W * scale, chartHpx = H * scale;
+      const titleHpx = titleText ? 56 * scale : 0;
+      const padPx = 26 * scale;
+      const maxTextWidthPx = chartWpx - padPx * 2;
+
+      const measureCanvas = document.createElement('canvas');
+      const mctx = measureCanvas.getContext('2d');
+      let reportLines = [];
+      const reportFontPx = 16 * scale;
+      const reportLineHeightPx = 26 * scale;
+      if(reportText){
+        mctx.font = reportFontPx + 'px "Noto Sans TC", sans-serif';
+        reportLines = wrapCanvasText(mctx, reportText, maxTextWidthPx);
+      }
+      const reportHeadingPx = reportText ? 42 * scale : 0;
+      const reportBodyPx = reportText ? reportLines.length * reportLineHeightPx : 0;
+      const reportAreaPx = reportText ? (24 * scale + reportHeadingPx + reportBodyPx + 20 * scale) : 0;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = chartWpx;
+      canvas.height = chartHpx + titleHpx + reportAreaPx;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+      const img = new Image();
+
+      img.onload = function(){
+        try{
+          ctx.drawImage(img, 0, 0, chartWpx, chartHpx);
+
+          if(titleText){
+            ctx.fillStyle = EXPORT_COLOR_MAP['--ink'];
+            ctx.font = '600 ' + (25 * scale) + 'px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(titleText, canvas.width / 2, chartHpx + titleHpx / 2);
+          }
+
+          if(reportText){
+            let y = chartHpx + titleHpx;
+            ctx.strokeStyle = '#D3E3D9';
+            ctx.lineWidth = 1 * scale;
+            ctx.beginPath();
+            ctx.moveTo(padPx, y + 12 * scale);
+            ctx.lineTo(chartWpx - padPx, y + 12 * scale);
+            ctx.stroke();
+
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = EXPORT_COLOR_MAP['--navy'];
+            ctx.font = '700 ' + (18 * scale) + 'px "Noto Sans TC", sans-serif';
+            ctx.fillText('統計圖判讀報告', padPx, y + 24 * scale + 18 * scale);
+
+            ctx.fillStyle = EXPORT_COLOR_MAP['--ink'];
+            ctx.font = reportFontPx + 'px "Noto Sans TC", sans-serif';
+            const bodyStartY = y + reportHeadingPx + 24 * scale;
+            reportLines.forEach((line, i)=>{
+              ctx.fillText(line, padPx, bodyStartY + (i + 1) * reportLineHeightPx - 6 * scale);
+            });
+          }
+
+          const pngDataUrl = canvas.toDataURL('image/png');
+          const safeName = (titleText || '統計圖').replace(/[\\/:*?"<>|]/g, '').slice(0, 40) || '統計圖';
+
+          exportPreviewImg.src = pngDataUrl;
+          exportDownloadLink.href = pngDataUrl;
+          exportDownloadLink.download = safeName + '.png';
+          exportOverlay.classList.add('open');
+        } catch(err){
+          alert('圖檔匯出時發生錯誤：' + err.message);
+        }
+      };
+      img.onerror = function(){
+        alert('圖檔匯出失敗（SVG 轉換失敗），請重新整理頁面後再試一次。');
+      };
+      img.src = svgDataUrl;
+    } catch(err){
+      alert('圖檔匯出時發生錯誤：' + err.message);
+    }
+  }
+
+  exportBtn.addEventListener('click', exportChartAsPNG);
+
+  function updateReportCount(){
+    reportCount.textContent = (reportInput.value || '').length + ' 字';
+  }
+  reportInput.addEventListener('input', updateReportCount);
+  reportClearBtn.addEventListener('click', ()=>{
+    reportInput.value = '';
+    updateReportCount();
+    reportInput.focus();
+  });
+
+  presetSelect.addEventListener('change', (e)=>{
+    loadPreset(e.target.value);
+  });
+
+  addRowBtn.addEventListener('click', ()=>{
+    buildRow('', 0, 0);
+    redrawStatic();
+  });
+
+  [
+    chartTitleInput, xLabelInput, yLabelInput, yMinInput, yMaxInput, yStepInput, series1NameInput,
+    series2NameInput, y2LabelInput, y2MinInput, y2MaxInput, y2StepInput
+  ].forEach(inp=>{
+    inp.addEventListener('input', redrawStatic);
+  });
+
+  series2Toggle.addEventListener('change', redrawStatic);
+  dualAxisToggle.addEventListener('change', redrawStatic);
+  showLabelsToggle.addEventListener('change', redrawStatic);
+
+  loadCustomPresetsFromStorage();
+  refreshPresetSelect('climate_kaohsiung');
+  loadPreset('climate_kaohsiung');
+  updateReportCount();
+})();
+</script>
+
+</body>
+</html>
