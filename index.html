@@ -604,8 +604,23 @@
 <header>
   <h1>長條統計圖 ⇄ 折線統計圖</h1>
   <p>自由設定橫軸、獨立雙縱軸與省略符號，觀察長條圖如何逐漸收攏、連成折線圖</p>
+  <label for="linkSelect">另開視窗：</label>
+  <select id="linkSelect" onchange="openLink(this.value)">
+    <option value="" disabled selected>-- 請選擇 --</option>
+    <option value="original.html">初版程式</option>
+    <option value="report-covid19.png">輸出報到</option>
+  </select>
+  <script>
+    function openLink(url) {
+      if (url) {
+        // 在新分頁開啟
+        window.open(url, '_blank');
+        // 開啟後將選單重置回預設提示（可依需求保留或移除）
+        document.getElementById('linkSelect').selectedIndex = 0;
+      }
+    }
+  </script>
 </header>
-
 <div class="layout">
 
   <div class="panel">
