@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>長條圖 ⇄ 折線圖 教學動畫</title>
+<title>長條圖 ⇄ 折線圖 教學動畫 v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -55,14 +55,14 @@
   .layout{
     display:flex;
     gap:22px;
-    max-width:1360px;
+    max-width:1380px;
     margin:0 auto;
     padding:10px 24px 40px;
     align-items:flex-start;
     flex-wrap:wrap;
   }
   .panel{
-    flex:0 0 360px;
+    flex:0 0 375px;
     background:var(--panel);
     border:1px solid var(--panel-border);
     border-radius:var(--radius);
@@ -163,9 +163,12 @@
     border-top:1px dashed var(--panel-border);
     margin:16px 0;
   }
+
+  /* 資料表格與拖曳樣式 */
   table#dataTable{
     width:100%;
-    border-collapse:collapse;
+    border-collapse:separate;
+    border-spacing:0 3px;
     margin-bottom:10px;
   }
   table#dataTable th{
@@ -173,10 +176,11 @@
     color:var(--ink-soft);
     text-align:left;
     font-weight:600;
-    padding-bottom:4px;
+    padding:4px 3px;
   }
   table#dataTable td{
-    padding:3px 3px;
+    padding:2px 3px;
+    vertical-align:middle;
   }
   table#dataTable input{
     width:100%;
@@ -187,8 +191,41 @@
     background:var(--white);
     color:var(--ink);
   }
-  table#dataTable .val-col{width:72px;}
+  table#dataTable .val-col{width:68px;}
   table#dataTable.no-series2 .val2-col{display:none;}
+  
+  /* 拖曳手把與拖曳反饋特效 */
+  .drag-col{
+    width:22px;
+    text-align:center;
+  }
+  .drag-handle{
+    width:22px;
+    cursor:grab;
+    color:var(--ink-soft);
+    font-size:15px;
+    user-select:none;
+    text-align:center;
+    opacity:0.55;
+    transition:opacity .15s, color .15s;
+    line-height:1;
+    display:inline-block;
+  }
+  .drag-handle:hover{
+    opacity:1;
+    color:var(--navy);
+  }
+  tr.is-dragging{
+    opacity:0.35;
+    background:#d8e8de;
+  }
+  tr.drag-over-top td{
+    border-top:2.5px solid var(--navy) !important;
+  }
+  tr.drag-over-bottom td{
+    border-bottom:2.5px solid var(--navy) !important;
+  }
+
   .checkbox-field{
     margin-bottom:10px;
     display:flex;
@@ -212,11 +249,16 @@
     border:none;
     color:#C0503A;
     cursor:pointer;
-    font-size:16px;
+    font-size:15px;
     line-height:1;
-    padding:4px 6px;
+    padding:4px 5px;
+    border-radius:4px;
+    transition:background .15s;
   }
-  .del-btn:hover{color:#8f3524;}
+  .del-btn:hover{
+    background:#fde8e5;
+    color:#8f3524;
+  }
   .table-tools{
     display:flex;
     gap:8px;
@@ -602,25 +644,10 @@
 <body>
 
 <header>
-  <h1>長條統計圖 ⇄ 折線統計圖</h1>
-  <p>自由設定橫軸、獨立雙縱軸與省略符號，觀察長條圖如何逐漸收攏、連成折線圖</p>
-  <label for="linkSelect">另開視窗：</label>
-  <select id="linkSelect" onchange="openLink(this.value)">
-    <option value="" disabled selected>-- 請選擇 --</option>
-    <option value="original.html">初版程式</option>
-    <option value="report-covid19.png">輸出報告</option>
-  </select>
-  <script>
-    function openLink(url) {
-      if (url) {
-        // 在新分頁開啟
-        window.open(url, '_blank');
-        // 開啟後將選單重置回預設提示（可依需求保留或移除）
-        document.getElementById('linkSelect').selectedIndex = 0;
-      }
-    }
-  </script>
+  <h1>長條統計圖 ⇄ 折線統計圖 (v3)</h1>
+  <p>自由拖曳左側資料列排序，觀察長條圖與折線圖如何隨時序變化即時連動！</p>
 </header>
+
 <div class="layout">
 
   <div class="panel">
@@ -726,9 +753,17 @@
       <label><input type="checkbox" id="showLabelsToggle" checked> 顯示數值標籤（讀數顏色與軸線對應）</label>
     </div>
 
-    <h2>資料表</h2>
+    <h2>資料表（可拖曳手把 ⠿ 進行上下排序）</h2>
     <table id="dataTable">
-      <thead><tr><th>類別（橫軸）</th><th class="val-col">數值①</th><th class="val-col val2-col">數值②</th><th></th></tr></thead>
+      <thead>
+        <tr>
+          <th class="drag-col" title="拖曳排序"></th>
+          <th>類別（橫軸）</th>
+          <th class="val-col">數值①</th>
+          <th class="val-col val2-col">數值②</th>
+          <th style="width:24px;"></th>
+        </tr>
+      </thead>
       <tbody id="dataBody"></tbody>
     </table>
     
@@ -784,7 +819,7 @@
 
     <div class="report-section">
       <label for="reportInput">📝 統計圖判讀報告</label>
-      <textarea id="reportInput" rows="6" placeholder="請根據上方統計圖，寫下你的判讀：兩組資料分別使用哪一邊的縱軸刻度？整體呈現什麼關係或季節趨勢？雙軸各省略了哪些區間？你觀察到什麼、又能推論出什麼？"></textarea>
+      <textarea id="reportInput" rows="6" placeholder="請根據上方統計圖，寫下你的判讀：兩組資料分別使用哪一邊的縱軸刻度？整體呈現什麼關係或季節趨勢？若改變了類別順序，折線圖的趨勢是否產生突兀變化？"></textarea>
       <div class="report-footer">
         <span id="reportCount">0 字</span>
         <button class="action btn-ghost small" id="reportClearBtn">清空</button>
@@ -794,7 +829,7 @@
 
 </div>
 
-<footer>提示：啟用「獨立右縱軸」時，藍色數值請對照左軸、綠色數值請對照右軸；雙軸起點皆支援獨立的波浪省略記號。拖曳演示進度條可隨時暫停解說！</footer>
+<footer>提示：按住資料表左側「⠿」圖示即可上下拖曳；順序改變時右側圖表將即時重繪。拖曳演示進度條可隨時暫停解說！</footer>
 
 <!-- 另存新案例彈窗 -->
 <div class="modal-overlay" id="savePresetModal">
@@ -854,7 +889,7 @@
 <script>
 (function(){
   const NS = "http://www.w3.org/2000/svg";
-  const STORAGE_KEY = "CHART_TEACHING_CUSTOM_PRESETS_V1";
+  const STORAGE_KEY = "CHART_TEACHING_CUSTOM_PRESETS_V3";
 
   const svg = document.getElementById('chart');
   const dataBody = document.getElementById('dataBody');
@@ -923,7 +958,7 @@
   const pauseBtn = document.getElementById('pauseBtn');
   const speedSelect = document.getElementById('speedSelect');
 
-  // 內建官方教學案例
+  // 官方教學案例
   const OFFICIAL_PRESETS = {
     climate_kaohsiung: {
       name: "案例一：高雄市月均溫與降雨量（雙縱軸不同度量，含省略記號）",
@@ -1075,7 +1110,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(customPresets));
     } catch(e) {
-      alert("儲存至瀏覽器本機失敗：" + e.message);
+      // 容錯處理
     }
   }
 
@@ -1124,7 +1159,7 @@
   let rafId = null;
   let globalProgress = 0.0;
 
-  // 雙軸佈局邊距：左右兩側皆保留坐標軸空間
+  // 雙軸佈局邊距：左右兩側均保留刻度與單位寬度
   const margin = {top:48, right:68, bottom:56, left:68};
   const W = 940, H = 570;
   const plotW = W - margin.left - margin.right;
@@ -1134,9 +1169,81 @@
   function isDualAxisEnabled(){ return series2Enabled() && dualAxisToggle.checked; }
   function isLabelsVisible(){ return showLabelsToggle.checked; }
 
+  // 拖曳全域狀態
+  let draggedRow = null;
+
+  function clearDropIndicators(){
+    dataBody.querySelectorAll('tr').forEach(r=>{
+      r.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+  }
+
+  // 綁定單列拖曳事件
+  function setupRowDraggable(tr){
+    const handle = tr.querySelector('.drag-handle');
+    if(!handle) return;
+
+    // 滑鼠移入手把才允許拖曳 tr，避免使用者點擊 input 輸入文字時被誤判為拖曳
+    handle.addEventListener('mouseenter', ()=>{ tr.draggable = true; });
+    handle.addEventListener('mouseleave', ()=>{ if(!draggedRow) tr.draggable = false; });
+
+    tr.addEventListener('dragstart', (e)=>{
+      draggedRow = tr;
+      tr.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', ''); // Firefox 相容支援
+    });
+
+    tr.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if(!draggedRow || draggedRow === tr) return;
+
+      const rect = tr.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      clearDropIndicators();
+      if(e.clientY < midY){
+        tr.classList.add('drag-over-top');
+      } else {
+        tr.classList.add('drag-over-bottom');
+      }
+    });
+
+    tr.addEventListener('dragleave', ()=>{
+      tr.classList.remove('drag-over-top', 'drag-over-bottom');
+    });
+
+    tr.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      if(!draggedRow || draggedRow === tr) return;
+
+      const rect = tr.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      clearDropIndicators();
+
+      if(e.clientY < midY){
+        dataBody.insertBefore(draggedRow, tr);
+      } else {
+        dataBody.insertBefore(draggedRow, tr.nextSibling);
+      }
+      redrawStatic();
+    });
+
+    tr.addEventListener('dragend', ()=>{
+      if(draggedRow){
+        draggedRow.classList.remove('is-dragging');
+      }
+      tr.draggable = false;
+      draggedRow = null;
+      clearDropIndicators();
+      redrawStatic();
+    });
+  }
+
   function buildRow(label, value, value2){
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td class="drag-col"><span class="drag-handle" title="按住可上下拖曳排序">⠿</span></td>
       <td><input type="text" class="lbl-input" value="${label}"></td>
       <td class="val-col"><input type="number" step="any" class="val-input" value="${value}"></td>
       <td class="val-col val2-col"><input type="number" step="any" class="val2-input" value="${value2 || 0}"></td>
@@ -1149,6 +1256,8 @@
       tr.remove();
       redrawStatic();
     });
+
+    setupRowDraggable(tr);
     dataBody.appendChild(tr);
   }
 
@@ -1345,7 +1454,6 @@
     if(dualAxis){
       for(let v = yMin2; v <= yMax2 + 1e-9; v += yStep2){
         const y = yScale(v, yMin2, yMax2, effBaseY2, margin.top);
-        // 右側小刻度短線
         svg.appendChild(el('line',{x1:rightAxisX, y1:y, x2:rightAxisX + 6, y2:y, stroke:'var(--teal)', 'stroke-width':1.5}));
         const t = el('text',{x:rightAxisX + 10, y:y + 4, 'text-anchor':'start', class:'tick-label', fill:'var(--teal)', 'font-weight':'600'});
         t.textContent = (Math.round(v * 100) / 100).toString();
@@ -1365,20 +1473,18 @@
         svg.appendChild(el('line',{x1:rightAxisX, y1:margin.top, x2:rightAxisX, y2:axisBaseY, stroke:'var(--teal)', 'stroke-width':2}));
       }
 
-      // 右軸頂部說明標籤 (箭頭引導)
       const y2Name = (series2NameInput.value || '數列二') + (y2LabelInput.value ? ` (${y2LabelInput.value})` : '');
       const y2Lab = el('text',{x:rightAxisX, y:margin.top - 16, 'text-anchor':'start', class:'axis-label', fill:'var(--teal)'});
       y2Lab.textContent = y2Name + ' →';
       svg.appendChild(y2Lab);
     } else {
-      // 若無雙軸，右邊僅為框線
       svg.appendChild(el('line',{x1:rightAxisX, y1:margin.top, x2:rightAxisX, y2:axisBaseY, stroke:'var(--grid-minor)', 'stroke-width':1.2}));
     }
 
     // 橫軸底線
     svg.appendChild(el('line',{x1:margin.left, y1:axisBaseY, x2:rightAxisX, y2:axisBaseY, stroke:'var(--ink)', 'stroke-width':1.8}));
 
-    // 左軸頂部說明標籤 (箭頭引導)
+    // 左軸頂部說明標籤
     const y1Name = (series1NameInput.value || '數列一') + (yLabelInput.value ? ` (${yLabelInput.value})` : '');
     const yLab = el('text',{x:margin.left, y:margin.top - 16, 'text-anchor':'end', class:'axis-label', fill:'var(--navy)'});
     yLab.textContent = '← ' + y1Name;
@@ -1389,7 +1495,7 @@
     xLab.textContent = xLabelInput.value || '類別';
     svg.appendChild(xLab);
 
-    // 映射所有數據點到坐標
+    // 依目前 DOM 資料順序映射數據點到坐標
     const slot = plotW / n;
     dataPoints = data.map((d, i)=>{
       const cx = margin.left + slot * i + slot / 2;
@@ -1413,7 +1519,7 @@
       return {cx, cy, cy2, value:d.value, value2:d.value2, label:d.label, bw1, barCx1, bw2, barCx2, effBaseY1, effBaseY2, hasSq1, hasSq2};
     });
 
-    // 直條圖群組 (數列一用左軸、數列二用右軸)
+    // 直條圖群組
     const barGroup = el('g',{id:'barGroup'});
     svg.appendChild(barGroup);
     barEls = dataPoints.map(p=>{
@@ -1450,7 +1556,7 @@
       return r;
     }) : [];
 
-    // 折線圖路徑群組
+    // 折線圖群組
     const lineGroup = el('g',{id:'lineGroup'});
     svg.appendChild(lineGroup);
     const pathD = dataPoints.map((p,i)=> (i===0?'M':'L') + p.cx + ',' + p.cy).join(' ');
@@ -1493,7 +1599,7 @@
       pathLen2 = 0;
     }
 
-    // 數值文字標籤（顏色精準綁定）
+    // 數值文字標籤
     const labelGroup = el('g',{id:'labelGroup'});
     svg.appendChild(labelGroup);
     valLabelEls = dataPoints.map(p=>{
@@ -1516,7 +1622,7 @@
       return t;
     }) : [];
 
-    // 圖例（清楚標明看左軸 / 看右軸）
+    // 圖例
     if(s2){
       legendGroup = el('g',{id:'legendGroup', opacity: 1});
       svg.appendChild(legendGroup);
@@ -1948,28 +2054,24 @@
 
   confirmSavePresetBtn.addEventListener('click', ()=>{
     const name = newPresetName.value.trim();
-    if(!name){ alert("請輸入案例名稱！"); return; }
+    if(!name) return;
     const newId = "custom_" + Date.now();
     customPresets[newId] = getCurrentSnapshot(name);
     saveCustomPresetsToStorage();
     refreshPresetSelect(newId);
     closeSaveModal();
-    alert(`成功儲存案例「${name}」至題庫！`);
   });
 
   updatePresetBtn.addEventListener('click', ()=>{
     const curKey = presetSelect.value;
     if(!customPresets[curKey]) return;
-    if(!confirm(`確定要將目前的資料覆蓋更新至「${customPresets[curKey].name}」嗎？`)) return;
     customPresets[curKey] = getCurrentSnapshot(customPresets[curKey].name);
     saveCustomPresetsToStorage();
-    alert("案例資料已成功更新！");
   });
 
   deletePresetBtn.addEventListener('click', ()=>{
     const curKey = presetSelect.value;
     if(!customPresets[curKey]) return;
-    if(!confirm(`確定要刪除自訂題庫案例「${customPresets[curKey].name}」嗎？刪除後無法復原。`)) return;
     delete customPresets[curKey];
     saveCustomPresetsToStorage();
     refreshPresetSelect('climate_kaohsiung');
@@ -1978,10 +2080,7 @@
 
   exportPresetsBtn.addEventListener('click', ()=>{
     const keys = Object.keys(customPresets);
-    if(keys.length === 0){
-      alert("目前尚無自訂題庫案例可供匯出，請先點擊「另存為新案例」。");
-      return;
-    }
+    if(keys.length === 0) return;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(customPresets, null, 2));
     const dlAnchor = document.createElement('a');
     dlAnchor.setAttribute("href", dataStr);
@@ -1999,9 +2098,7 @@
     reader.onload = (evt)=>{
       try{
         const imported = JSON.parse(evt.target.result);
-        if(typeof imported !== 'object' || Array.isArray(imported)){
-          throw new Error("格式錯誤：題庫檔需為合法 JSON 物件。");
-        }
+        if(typeof imported !== 'object' || Array.isArray(imported)) return;
         let count = 0;
         for(const k in imported){
           if(imported[k] && imported[k].title && Array.isArray(imported[k].data)){
@@ -2013,13 +2110,8 @@
         if(count > 0){
           saveCustomPresetsToStorage();
           refreshPresetSelect();
-          alert(`成功匯入 ${count} 筆題庫案例！`);
-        } else {
-          alert("匯入失敗：未在檔案中找到相容的案例資料結構。");
         }
-      } catch(err){
-        alert("無法讀取此題庫檔案：" + err.message);
-      }
+      } catch(err){}
       presetFileInput.value = '';
     };
     reader.readAsText(file);
@@ -2037,7 +2129,7 @@
 
   confirmImportBtn.addEventListener('click', ()=>{
     const raw = importText.value.trim();
-    if(!raw){ alert('請先貼上資料內容！'); return; }
+    if(!raw) return;
     const lines = raw.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length > 0);
     if(lines.length === 0) return;
 
@@ -2068,7 +2160,7 @@
       newArr.push([lbl, isNaN(v1) ? 0 : v1, isNaN(v2) ? 0 : v2]);
     }
 
-    if(newArr.length === 0){ alert('無法解析有效數據，請確認格式。'); return; }
+    if(newArr.length === 0) return;
 
     series2Toggle.checked = s2Found;
     dataBody.innerHTML = '';
@@ -2076,7 +2168,6 @@
 
     const s1Vals = newArr.map(r => r[1]);
     const maxVal1 = Math.max(...s1Vals);
-    const minVal1 = Math.min(...s1Vals);
     const step1 = Math.ceil(maxVal1 / 6) || 10;
     yMinInput.value = 0;
     yMaxInput.value = Math.ceil(maxVal1 / step1) * step1;
@@ -2085,8 +2176,6 @@
     if(s2Found){
       const s2Vals = newArr.map(r => r[2]);
       const maxVal2 = Math.max(...s2Vals);
-      const minVal2 = Math.min(...s2Vals);
-      // 若兩組數值量級差異超過2倍，自動啟用獨立雙軸
       if(maxVal1 > maxVal2 * 2.5 || maxVal2 > maxVal1 * 2.5){
         dualAxisToggle.checked = true;
         const step2 = Math.ceil(maxVal2 / 6) || 5;
@@ -2224,17 +2313,10 @@
           exportDownloadLink.href = pngDataUrl;
           exportDownloadLink.download = safeName + '.png';
           exportOverlay.classList.add('open');
-        } catch(err){
-          alert('圖檔匯出時發生錯誤：' + err.message);
-        }
-      };
-      img.onerror = function(){
-        alert('圖檔匯出失敗（SVG 轉換失敗），請重新整理頁面後再試一次。');
+        } catch(err){}
       };
       img.src = svgDataUrl;
-    } catch(err){
-      alert('圖檔匯出時發生錯誤：' + err.message);
-    }
+    } catch(err){}
   }
 
   exportBtn.addEventListener('click', exportChartAsPNG);
